@@ -10,8 +10,8 @@ from src.Utils.deps import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: UserCreate, session: Session = Depends(get_session)):
+@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+def signup(payload: UserCreate, session: Session = Depends(get_session)):
     try:
         user = create_user(
             session=session,
@@ -35,7 +35,6 @@ def register(payload: UserCreate, session: Session = Depends(get_session)):
                 "is_admin": user.is_admin
             }
         }
-
     except ValueError as e:
         if str(e) == "EMAIL_ALREADY_EXISTS":
             raise HTTPException(status_code=400, detail="Email already exists")
