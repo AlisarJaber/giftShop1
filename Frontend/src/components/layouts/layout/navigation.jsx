@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom"
+import "../../../assets/auth.css"
 
 const Navigation = () => {
 
 
-    return(
+    return (
+        <div className="navigation">
 
-        <Link to="/" >  products </Link>
+            
 
-
+        </div>
     )
 }
 
