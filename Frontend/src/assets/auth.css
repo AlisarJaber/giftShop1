@@ -1,0 +1,156 @@
+/* PAGE BACKGROUND */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 16px;
+  background: #f7f2ea; /* בהיר כמו בתמונה */
+}
+
+/* CARD */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+  padding: 22px 22px 18px;
+}
+
+/* HEADER (GiftShop + icon) */
+.brand {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c2c2c;
+}
+
+.brand .gift {
+  font-size: 22px;
+  transform: translateY(2px);
+}
+
+.subtitle-he {
+  text-align: center;
+  margin: 6px 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2c2c2c;
+}
+
+.subtitle-en {
+  text-align: center;
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+/* TABS */
+.auth-tabs {
+  background: #f3f3f3;
+  border-radius: 10px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.auth-tab {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b6b6b;
+  cursor: pointer;
+}
+
+.auth-tab.active {
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  color: #2c2c2c;
+}
+
+/* FORM */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  color: #4c4c4c;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+/* input with right icon */
+.input-wrap {
+  position: relative;
+}
+
+.input-wrap input {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fafafa;
+  padding: 0 42px 0 12px; /* מקום לאייקון מימין */
+  font-size: 14px;
+  outline: none;
+}
+
+.input-wrap input:focus {
+  border-color: rgba(224, 110, 68, 0.65);
+  box-shadow: 0 0 0 3px rgba(224, 110, 68, 0.15);
+  background: #fff;
+}
+
+.input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.6;
+  font-size: 14px;
+}
+
+.hint {
+  font-size: 11px;
+  color: #9a9a9a;
+  margin-top: 4px;
+}
+
+/* BUTTON */
+.auth-btn {
+  margin-top: 6px;
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: #e06e44; /* כתום כמו בתמונה */
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.05s;
+}
+
+.auth-btn:hover {
+  opacity: 0.92;
+}
+
+.auth-btn:active {
+  transform: scale(0.99);
+}
