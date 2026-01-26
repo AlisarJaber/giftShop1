@@ -1,6 +1,7 @@
 from typing import Optional
 from sqlmodel import SQLModel, Field
 from datetime import datetime
+from datetime import datetime, timezone
 
 class Product(SQLModel, table=True):
     __tablename__ = "product"  
@@ -12,5 +13,5 @@ class Product(SQLModel, table=True):
     quantity: int = 0
     badge: Optional[str] = None 
     is_active: bool = True
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
