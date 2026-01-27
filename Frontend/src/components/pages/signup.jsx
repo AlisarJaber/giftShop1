@@ -19,7 +19,8 @@ const Signup = () => {
             last_name,
             email,
             password,
-            });
+            })
+            localStorage.setItem("token", res.data.access_token)
 
             console.log("signup ok:", res.data)
             alert("Signup successful!")
@@ -73,12 +74,14 @@ const Signup = () => {
                     <div className="field">
                         <label>Password</label>
                         <div className="input-wrap">
-                            <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" />
+                            <input
+                            type="password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                            placeholder="••••••••"
+                            />
                         </div>
                     </div>
-
-
-
                     <button className="auth-btn" type="submit"> Submit </button>
 
                 </form>
