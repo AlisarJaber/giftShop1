@@ -38,7 +38,7 @@ const Login = () => {
           <span></span>
         </div>
 
-        <div className="welcome">welcome</div>
+        <div className="welcome">welcome back!</div>
         <div className="subtitle">To enter the store you need to log in</div>
 
         <div className="auth-tabs">
