@@ -39,7 +39,7 @@
   transform: translateY(2px);
 }
 
-.subtitle-he {
+.welcome {
   text-align: center;
   margin: 6px 0 2px;
   font-size: 14px;
@@ -47,40 +47,47 @@
   color: #2c2c2c;
 }
 
-.subtitle-en {
+.subtitle {
   text-align: center;
   margin: 0 0 14px;
   font-size: 12px;
   color: #8c8c8c;
 }
 
-/* TABS */
+/* Tabs container */
 .auth-tabs {
-  background: #f3f3f3;
-  border-radius: 10px;
-  padding: 4px;
   display: flex;
-  gap: 4px;
-  margin-bottom: 14px;
+  justify-content: center;
+  background: #f3f3f3;
+  border-radius: 12px;
+  padding: 6px;
+  margin: 20px auto;
+  width: fit-content;
 }
 
+/* Link base style */
 .auth-tab {
-  flex: 1;
-  border: 0;
-  background: transparent;
-  height: 34px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #6b6b6b;
-  cursor: pointer;
+  text-decoration: none;      /* מבטל קו תחתון */
+  color: #555;
+  font-size: 18px;            /* פונט גדול יותר */
+  font-weight: 500;
+  padding: 8px 22px;
+  border-radius: 10px;
+  transition: 0.2s ease;
 }
 
+/* Hover */
+.auth-tab:hover {
+  color: #d63b2b;             /* אדום מעט חזק יותר */
+}
+
+/* Active tab */
 .auth-tab.active {
   background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  color: #2c2c2c;
+  color: #d63b2b;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
+
 
 /* FORM */
 .auth-form {
@@ -103,7 +110,7 @@
 }
 
 .input-wrap input {
-  width: 100%;
+  width: 80%;
   height: 42px;
   border-radius: 10px;
   border: 1px solid rgba(0,0,0,0.12);
@@ -114,7 +121,7 @@
 }
 
 .input-wrap input:focus {
-  border-color: rgba(224, 110, 68, 0.65);
+  border-color: #c22303;
   box-shadow: 0 0 0 3px rgba(224, 110, 68, 0.15);
   background: #fff;
 }
@@ -140,7 +147,7 @@
   height: 44px;
   border: 0;
   border-radius: 10px;
-  background: #e06e44; /* כתום כמו בתמונה */
+  background: #c22303; /* כתום כמו בתמונה */
   color: #fff;
   font-weight: 800;
   cursor: pointer;
