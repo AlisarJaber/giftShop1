@@ -21,36 +21,36 @@ const Login = () => {
         <div className="auth-page">
             <div className="auth-card">
                 <div className="brand">
-                    <h1>GiftShop</h1>
-                    <span className="gift">🎁</span>
+                    <h1> </h1>
+                    <span> </span>
                 </div>
 
-                <div className="subtitle-he">ברוכים הבאים</div>
-                <div className="subtitle-en">To enter the store you need to log in</div>
+                <div className="welcome"> welcome</div>
+                <div className="subtitle">To enter the store you need to log in</div>
 
                 <div className="auth-tabs">
-                    <Link to="/login" className="auth-tab">  Login </Link>
-                    <Link to="/signup" className="auth-tab">  Sign up </Link>
+                    <Link to="/signup" className="auth-tab"> Sign up </Link>
+                    <Link to="/login" className="auth-tab active"> Login </Link>
                 </div>
 
                 <form className="auth-form">
+
                     <div className="field">
                         <label>Email</label>
                         <div className="input-wrap">
-                            <input placeholder="your@email.com" />
-                            <span className="input-icon">✉️</span>
+                            <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="your@email.com" />
                         </div>
                     </div>
 
                     <div className="field">
                         <label>Password</label>
                         <div className="input-wrap">
-                            <input type="password" placeholder="••••••••" />
-                            <span className="input-icon">🔒</span>
+                            <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" />
                         </div>
                     </div>
 
-                    <button className="auth-btn" type="submit">Login</button>
+                    <button className="auth-btn" type="submit"> Submit </button>
+
                 </form>
             </div>
         </div>
