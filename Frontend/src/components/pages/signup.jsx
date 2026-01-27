@@ -35,7 +35,7 @@ const Signup = () => {
                     <Link to="/login" className="auth-tab "> Login </Link>
                 </div>
 
-                <form className="auth-form">
+                <form className="auth-form" onSubmit={sendData}>
 
                     <div className="field">
                         <label>First Name</label>

@@ -33,7 +33,7 @@ const Login = () => {
                     <Link to="/login" className="auth-tab active"> Login </Link>
                 </div>
 
-                <form className="auth-form">
+                <form className="auth-form" onSubmit={sendData}>
 
                     <div className="field">
                         <label>Email</label>
