@@ -3,7 +3,6 @@ from sqlmodel import Session
 from typing import List
 
 from database import get_session
-from src.Models.product import Product
 from src.Schemas.product import (
     ProductCard,
     ProductDetails,
@@ -21,12 +20,14 @@ from src.Utils.deps import get_current_user, require_admin
 
 router = APIRouter(prefix="/products", tags=["products"])
 
+
 @router.get("", response_model=List[ProductCard])
 def list_products(
     session: Session = Depends(get_session),
     user=Depends(get_current_user)
 ):
     return get_all_products(session)
+
 
 @router.get("/{product_id}", response_model=ProductDetails)
 def product_details(
@@ -39,14 +40,16 @@ def product_details(
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
+
 @router.post("", response_model=ProductDetails, status_code=status.HTTP_201_CREATED)
 def add_product(
     payload: ProductCreate,
     session: Session = Depends(get_session),
     admin=Depends(require_admin)
 ):
-    product = Product(**payload.dict())
-    return create_product(session, product)
+
+    return create_product(session, payload)
+
 
 @router.put("/{product_id}", response_model=ProductDetails)
 def edit_product(
@@ -61,6 +64,7 @@ def edit_product(
 
     return update_product(session, product, payload.dict(exclude_unset=True))
 
+
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_product(
     product_id: int,
@@ -72,3 +76,4 @@ def delete_product(
         raise HTTPException(status_code=404, detail="Product not found")
 
     soft_delete_product(session, product)
+
