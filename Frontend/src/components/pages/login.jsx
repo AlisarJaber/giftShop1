@@ -21,8 +21,8 @@ const Login = () => {
         <div className="auth-page">
             <div className="auth-card">
                 <div className="brand">
-                    <h1> </h1>
-                    <span> </span>
+                    <h1> GiftShop </h1>
+                    <span> 🎁 </span>
                 </div>
 
                 <div className="welcome"> welcome</div>
@@ -33,7 +33,7 @@ const Login = () => {
                     <Link to="/login" className="auth-tab active"> Login </Link>
                 </div>
 
-                <form className="auth-form">
+                <form className="auth-form" onSubmit={sendData}>
 
                     <div className="field">
                         <label>Email</label>
