@@ -11,12 +11,24 @@ const Signup = () => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
 
-
     const sendData = async (event) => {
-        event.preventDefault()
-        await axios.post("http://localhost:8000/auth/signup",
-            { first_name: first_name, last_name: last_name, email: email, password: password }
-        )
+        event.preventDefault();
+
+        try {
+            const res = await axios.post("http://localhost:8000/auth/signup", {
+            first_name,
+            last_name,
+            email,
+            password,
+            });
+
+            console.log("signup ok:", res.data);
+            alert("Signup successful!");
+        } catch (err) {
+            console.log("status:", err?.response?.status);
+            console.log("data:", err?.response?.data);
+            alert(err?.response?.data?.detail || "Signup failed");
+        }
     }
 
     return (
