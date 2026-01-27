@@ -1,11 +1,10 @@
 import axios from "axios"
 import { useState } from "react"
 import "../../assets/auth.css"
-import { Link } from "react-router-dom"
-
-
+import { Link, useNavigate } from "react-router-dom"
 
 const Signup = () => {
+    const navigate = useNavigate()
     const [first_name, setFirst_name] = useState("")
     const [last_name, setLast_name] = useState("")
     const [email, setEmail] = useState("")
@@ -22,8 +21,9 @@ const Signup = () => {
             password,
             });
 
-            console.log("signup ok:", res.data);
-            alert("Signup successful!");
+            console.log("signup ok:", res.data)
+            alert("Signup successful!")
+            navigate("/products")
         } catch (err) {
             console.log("status:", err?.response?.status);
             console.log("data:", err?.response?.data);

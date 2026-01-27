@@ -6,13 +6,12 @@ import ProductsPage from "./components/pages/Products/ProductsPage";
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/signup" replace />} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/" element={<Navigate to="/products" replace />} />
-      <Route path="*" element={<Navigate to="/products" replace />} />
     </Routes>
-  );
+  )
 }
 
 export default App;
