@@ -15,12 +15,16 @@ const Signup = () => {
 
         try {
             const res = await axios.post("http://localhost:8000/auth/signup", {
-            first_name,
-            last_name,
-            email,
-            password,
+                first_name,
+                last_name,
+                email,
+                password,
+            }, {
+                headers: { apiKey: "SEACRET1234567" } 
             })
-            localStorage.setItem("token", res.data.access_token)
+
+            localStorage.setItem("token", res.data.access_token);
+            localStorage.setItem("user", JSON.stringify(res.data.user))
 
             console.log("signup ok:", res.data)
             alert("Signup successful!")

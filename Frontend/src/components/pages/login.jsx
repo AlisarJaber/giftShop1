@@ -4,10 +4,10 @@ import "../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
   const sendData = async (event) => {
     event.preventDefault();
@@ -16,19 +16,19 @@ const Login = () => {
       const res = await axios.post("http://localhost:8000/auth/login", {
         email,
         password,
-      });
+      })
 
-  
-      localStorage.setItem("token", res.data.access_token);
+      localStorage.setItem("token", res.data.access_token)
+      localStorage.setItem("user", JSON.stringify(res.data.user))
 
       console.log("login ok:", res.data);
       navigate("/products");
     } catch (err) {
       console.log("status:", err?.response?.status);
       console.log("data:", err?.response?.data);
-      alert(err?.response?.data?.detail || "Login failed");
+      alert(err?.response?.data?.detail || "Login failed")
     }
-  }
+  };
 
   return (
     <div className="auth-page">
@@ -38,7 +38,7 @@ const Login = () => {
           <span></span>
         </div>
 
-        <div className="welcome">welcome back!</div>
+        <div className="welcome">welcome</div>
         <div className="subtitle">To enter the store you need to log in</div>
 
         <div className="auth-tabs">
@@ -62,7 +62,7 @@ const Login = () => {
             <label>Password</label>
             <div className="input-wrap">
               <input
-                type="password"   
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -74,8 +74,9 @@ const Login = () => {
         </form>
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default Login;
+
 
