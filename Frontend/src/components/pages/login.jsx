@@ -2,6 +2,7 @@ import { useState } from "react";
 import "../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../../../utils/http";
+import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,17 +16,13 @@ const Login = () => {
         const res = await axios.post(
             "http://localhost:8000/auth/login",
             { email, password },
-            { headers: { apiKey: "SEACRET1234567" } }
+            { headers: { apiKey: "SEACRET1234567" },
+          withCredentials: true }
         )
 
 
-      localStorage.setItem("token", res.data.access_token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-
       navigate("/products");
     } catch (err) {
-      console.log("status:", err?.response?.status);
-      console.log("data:", err?.response?.data);
       alert(err?.response?.data?.detail || "Login failed");
     }
   };
