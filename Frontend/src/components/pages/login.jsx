@@ -16,7 +16,7 @@ const Login = () => {
         const res = await http.post("/auth/login", {
             email,
             password,
-        })
+        }, {withCredentials: true})
 
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
