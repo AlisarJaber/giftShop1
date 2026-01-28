@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, create_engine, Session
 
-DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/postgres"
+DATABASE_URL = "postgresql://giftshop_user:giftshop123@localhost:5432/giftShop1"
 
 engine = create_engine(DATABASE_URL
                        , echo=True)

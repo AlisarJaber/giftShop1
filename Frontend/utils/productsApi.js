@@ -32,13 +32,3 @@ export async function toggleFavorite(productId) {
   const res = await http.post(`/favorites/${productId}`);
   return res.data
 }
-
-export async function signup(payload) {
-  const res = await http.post("/auth/signup", payload);
-  return res.data;
-}
-
-export async function login(payload) {
-  const res = await http.post("/auth/login", payload);
-  return res.data;
-}
