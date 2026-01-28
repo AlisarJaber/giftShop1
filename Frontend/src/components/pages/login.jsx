@@ -2,6 +2,7 @@ import { useState } from "react";
 import "../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../../../utils/http";
+import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,21 +13,21 @@ const Login = () => {
     event.preventDefault();
 
     try {
-        const res = await axios.post(
-            "http://localhost:8000/auth/login",
-            { email, password },
-            { headers: { apiKey: "SEACRET1234567" } }
-        )
-
+        const res = await http.post("/auth/login", {
+            email,
+            password,
+        })
 
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      navigate("/products");
+      navigate("/products")
     } catch (err) {
-      console.log("status:", err?.response?.status);
-      console.log("data:", err?.response?.data);
-      alert(err?.response?.data?.detail || "Login failed");
+        console.log("message:", err?.message);
+        console.log("code:", err?.code);
+        console.log("status:", err?.response?.status);
+        console.log("data:", err?.response?.data);
+        alert(err?.response?.data?.detail || err?.message || "Login failed")
     }
   };
 

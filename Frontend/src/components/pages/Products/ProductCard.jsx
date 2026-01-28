@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import {getProductById, deleteProduct, getFavoriteIds,toggleFavorite,}from "../../../../utils/productsApi";
+import { useNavigate } from "react-router-dom";
+import {
+  getProductById,
+  deleteProduct,
+  getFavoriteIds,
+  toggleFavorite,
+} from "../../../../utils/productsApi";
 
 export default function ProductCard({
   product,
@@ -7,12 +13,10 @@ export default function ProductCard({
   onDeleted,
   onEdit,
 }) {
+  const navigate = useNavigate();
   const { id, name, price, image_url, badge } = product;
 
   const [fav, setFav] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  const [details, setDetails] = useState(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     getFavoriteIds()
@@ -20,53 +24,50 @@ export default function ProductCard({
       .catch(() => {});
   }, [id]);
 
-  const toggleFav = async () => {
+  const goDetails = () => {
+    navigate(`/products/${id}`)
+  };
+
+  const toggleFav = async (e) => {
+    e.stopPropagation()
     try {
-      const res = await toggleFavorite(id); // { favorite: true/false }
+      const res = await toggleFavorite(id)
       setFav(!!res.favorite);
-    } catch (e) {
-      alert(e?.response?.data?.detail || "Favorite failed");
+    } catch (e2) {
+      alert(e2?.response?.data?.detail || "Favorite failed");
     }
-  };
+  }
 
-  const toggleDetails = async () => {
-    const nextShow = !showDetails;
-    setShowDetails(nextShow);
-
-    if (nextShow && !details) {
-      setLoadingDetails(true);
-      try {
-        const data = await getProductById(id);
-        setDetails(data);
-      } catch (e) {
-        alert(e?.response?.data?.detail || "Failed loading details");
-      } finally {
-        setLoadingDetails(false);
-      }
-    }
-  };
-
-  const handleDelete = async () => {
+  const handleDelete = async (e) => {
+    e.stopPropagation()
     if (!confirm("Delete this product?")) return;
     try {
       await deleteProduct(id);
       onDeleted?.(id);
-    } catch (e) {
-      alert(e?.response?.data?.detail || "Delete failed");
+    } catch (e2) {
+      alert(e2?.response?.data?.detail || "Delete failed");
     }
-  };
+  }
 
-  const handleEdit = async () => {
+  const handleEdit = async (e) => {
+    e.stopPropagation()
     try {
-      const data = await getProductById(id); // כולל description+quantity
+      const data = await getProductById(id)
       onEdit?.(data);
-    } catch (e) {
-      alert(e?.response?.data?.detail || "Failed loading product");
+    } catch (e2) {
+      alert(e2?.response?.data?.detail || "Failed loading product");
     }
-  };
+  }
 
   return (
-    <div className="p-card">
+    <div
+      className="p-card"
+      role="button"
+      tabIndex={0}
+      onClick={goDetails}
+      onKeyDown={(e) => e.key === "Enter" && goDetails()}
+      style={{ cursor: "pointer" }}
+    >
       <button
         className={`p-heart ${fav ? "active" : ""}`}
         type="button"
@@ -95,18 +96,18 @@ export default function ProductCard({
 
         <div className="p-bottom">
           <div className="p-price">₪{price}</div>
-          <button className="p-btn" type="button" onClick={toggleDetails}>
-            {showDetails ? "hide" : "for details"}
+
+          <button
+            className="p-btn"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              goDetails();
+            }}
+          >
+            View
           </button>
         </div>
-
-        {showDetails && (
-          <div className="p-desc">
-            {loadingDetails
-              ? "Loading..."
-              : details?.description || "No description yet."}
-          </div>
-        )}
 
         {isAdmin && (
           <div className="p-admin">
@@ -126,3 +127,4 @@ export default function ProductCard({
     </div>
   );
 }
+
