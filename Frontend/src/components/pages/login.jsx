@@ -1,32 +1,32 @@
-import axios from "axios";
 import { useState } from "react";
 import "../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
+import { http } from "../../../utils/http";
 
 const Login = () => {
-  const navigate = useNavigate()
-
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const sendData = async (event) => {
     event.preventDefault();
 
     try {
-      const res = await axios.post("http://localhost:8000/auth/login", {
-        email,
-        password,
-      })
+        const res = await axios.post(
+            "http://localhost:8000/auth/login",
+            { email, password },
+            { headers: { apiKey: "SEACRET1234567" } }
+        )
 
-      localStorage.setItem("token", res.data.access_token)
-      localStorage.setItem("user", JSON.stringify(res.data.user))
 
-      console.log("login ok:", res.data);
+      localStorage.setItem("token", res.data.access_token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
       navigate("/products");
     } catch (err) {
       console.log("status:", err?.response?.status);
       console.log("data:", err?.response?.data);
-      alert(err?.response?.data?.detail || "Login failed")
+      alert(err?.response?.data?.detail || "Login failed");
     }
   };
 
@@ -34,16 +34,20 @@ const Login = () => {
     <div className="auth-page">
       <div className="auth-card">
         <div className="brand">
-          <h1></h1>
-          <span></span>
+          <h1>GiftShop</h1>
+          <span>🎁</span>
         </div>
 
-        <div className="welcome">welcome</div>
+        <div className="welcome">welcome back</div>
         <div className="subtitle">To enter the store you need to log in</div>
 
         <div className="auth-tabs">
-          <Link to="/signup" className="auth-tab">Sign up</Link>
-          <Link to="/login" className="auth-tab active">Login</Link>
+          <Link to="/signup" className="auth-tab">
+            Sign up
+          </Link>
+          <Link to="/login" className="auth-tab active">
+            Login
+          </Link>
         </div>
 
         <form className="auth-form" onSubmit={sendData}>
@@ -70,13 +74,16 @@ const Login = () => {
             </div>
           </div>
 
-          <button className="auth-btn" type="submit">Submit</button>
+          <button className="auth-btn" type="submit">
+            Submit
+          </button>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Login;
+
 
 
