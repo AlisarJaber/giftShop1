@@ -1,20 +1,21 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException, status, Cookie
 from sqlmodel import Session, select
+
 from database import get_session
 from src.Models.user import User
 from src.Utils.jwt import decode_token
 
-security = HTTPBearer(auto_error=False)
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    access_token: str | None = Cookie(default=None),
     session: Session = Depends(get_session)
 ) -> User:
-    if not credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
 
-    token = credentials.credentials
+    if not access_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+
+    token = access_token
+
     try:
         payload = decode_token(token)
         user_id: int = int(payload.get("sub"))
@@ -24,7 +25,9 @@ def get_current_user(
     user = session.exec(select(User).where(User.id == user_id)).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
     return user
+
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
     if not user.is_admin:
