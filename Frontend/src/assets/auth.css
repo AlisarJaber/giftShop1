@@ -161,3 +161,21 @@
 .auth-btn:active {
   transform: scale(0.99);
 }
+/* __________________________________________________________________________________________________ */
+
+.nav__btn {
+  background: #f1f1f1;
+  border: none;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.nav__btn:hover {
+  background: #ffe5e5;
+  color: #c0392b;   /* אדום עדין */
+}
