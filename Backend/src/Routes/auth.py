@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlmodel import Session
 
 from database import get_session
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def signup(payload: UserCreate, session: Session = Depends(get_session)):
+def signup(payload: UserCreate, response: Response, session: Session = Depends(get_session)):
     try:
         user = create_user(
             session=session,
@@ -23,6 +23,18 @@ def signup(payload: UserCreate, session: Session = Depends(get_session)):
         )
 
         token = create_access_token({"sub": str(user.id), "is_admin": user.is_admin})
+
+        response.set_cookie(
+            key="access_token",
+            value=token,
+            httponly=True,
+            samesite="lax",
+            secure=False,
+            path="/",
+            domain="localhost"
+
+        )
+
 
         return {
             "access_token": token,
@@ -41,12 +53,23 @@ def signup(payload: UserCreate, session: Session = Depends(get_session)):
         raise
 
 @router.post("/login", response_model=AuthResponse)
-def login(payload: UserLogin, session: Session = Depends(get_session)):
+def login(payload: UserLogin, response: Response, session: Session = Depends(get_session)):
     user = authenticate_user(session=session, email=str(payload.email), password=payload.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     token = create_access_token({"sub": str(user.id), "is_admin": user.is_admin})
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        path="/",
+        domain="localhost"
+    )
+
 
     return {
         "access_token": token,
@@ -70,3 +93,10 @@ def me(current_user=Depends(get_current_user)):
         "email": current_user.email,
         "is_admin": current_user.is_admin
     }
+
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(key="access_token", path="/", domain="localhost"
+)
+    return {"ok": True}
