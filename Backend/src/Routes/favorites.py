@@ -14,10 +14,14 @@ def list_favorites(
     session: Session = Depends(get_session),
     user=Depends(get_current_user),
 ):
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     favs = session.exec(
         select(Favorite).where(Favorite.user_id == user.id)
     ).all()
     return [f.product_id for f in favs]
+
 
 @router.post("/{product_id}", status_code=status.HTTP_200_OK)
 def toggle_favorite(

@@ -36,24 +36,36 @@ export default function ProductsPage() {
   }
 
   const openEdit = (detailsProduct) => {
-    setEditInitial(detailsProduct); // כולל description/quantity
+    setEditInitial(detailsProduct)
     setModalOpen(true);
   }
-
   const submitModal = async (payload) => {
     try {
-      if (editInitial?.id) {
+        if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payload);
-        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-      } else {
+
+        setProducts((prev) =>
+            prev.map((p) =>
+            p.id === editInitial.id
+                ? { ...p, ...payload, ...updated } 
+                : p
+            )
+        )
+        } else {
         const created = await createProduct(payload);
-        setProducts((prev) => [created, ...prev]);
-      }
-      setModalOpen(false);
+
+        setProducts((prev) => [
+            created?.id ? created : { ...payload, id: Date.now() }, // fallback קטן
+            ...prev,
+        ])
+        }
+
+        setModalOpen(false);
+        setEditInitial(null);
     } catch (e) {
-      alert(e?.response?.data?.detail || "Save failed");
+        alert(e?.response?.data?.detail || "Save failed");
     }
-  }
+}
 
   return (
     <>
@@ -93,7 +105,7 @@ export default function ProductsPage() {
       <AdminProductModal
         open={modalOpen}
         initial={editInitial}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setEditInitial(null); }}
         onSubmit={submitModal}
       />
     </>
