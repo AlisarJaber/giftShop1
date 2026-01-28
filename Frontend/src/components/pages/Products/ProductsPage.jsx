@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import HeroSection from "./HeroSection";
 import AdminProductModal from "./AdminProductModal";
-import {
-  getProducts,
-  createProduct,
-  updateProduct,
-} from "../../../../utils/productsApi";
+import { getProducts, createProduct, updateProduct } from "../../../../utils/productsApi";
 import "./products.css";
 
 export default function ProductsPage() {
@@ -19,21 +15,21 @@ export default function ProductsPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editInitial, setEditInitial] = useState(null);
+  const [user, setUser] = useState(null);
 
-  const user = useMemo(() => {
+  useEffect(() => {
     try {
-      return JSON.parse(localStorage.getItem("user") || "null");
+      setUser(JSON.parse(localStorage.getItem("user") || "null"));
     } catch {
-      return null;
+      setUser(null);
     }
   }, []);
 
   const isAdmin = !!user?.is_admin;
 
   useEffect(() => {
-    if (!user) {
-      navigate("/signup", { replace: true });
-    }
+    if (user === null) return; 
+    if (!user) navigate("/signup", { replace: true });
   }, [user, navigate]);
 
   const load = () => {
@@ -41,9 +37,7 @@ export default function ProductsPage() {
     setError("");
 
     getProducts()
-      .then((data) => {
-        setProducts(Array.isArray(data) ? data : []);
-      })
+      .then((data) => setProducts(Array.isArray(data) ? data : []))
       .catch((e) => {
         if (e?.response?.status === 401) {
           navigate("/login", { replace: true });
@@ -59,22 +53,24 @@ export default function ProductsPage() {
   }, [user]);
 
   const openAdd = () => {
+    if (!isAdmin) return;
     setEditInitial(null);
     setModalOpen(true);
   };
 
   const openEdit = (product) => {
+    if (!isAdmin) return;
     setEditInitial(product);
     setModalOpen(true);
   };
 
   const submitModal = async (payload) => {
+    if (!isAdmin) return;
+
     try {
       if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payload);
-        setProducts((prev) =>
-          prev.map((p) => (p.id === updated.id ? updated : p))
-        );
+        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       } else {
         const created = await createProduct(payload);
         setProducts((prev) => [created, ...prev]);
@@ -109,17 +105,13 @@ export default function ProductsPage() {
 
         <div className="products-grid">
           {loading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div className="p-skel" key={i} />
-              ))
+            ? Array.from({ length: 6 }).map((_, i) => <div className="p-skel" key={i} />)
             : products.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
                   isAdmin={isAdmin}
-                  onDeleted={(id) =>
-                    setProducts((prev) => prev.filter((x) => x.id !== id))
-                  }
+                  onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
                   onEdit={openEdit}
                 />
               ))}
@@ -136,5 +128,6 @@ export default function ProductsPage() {
         onSubmit={submitModal}
       />
     </>
-  );
+  )
 }
+
