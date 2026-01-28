@@ -7,14 +7,15 @@ import { useNavigate } from "react-router-dom";
 const Navigation = () => {
 
     const navigate = useNavigate();
+    const one = 1
 
-    const sendData = async () => {
+    const handleLogout = async () => {
         await axios.post(
             "http://localhost:8000/auth/logout",
             {},
             {
                 withCredentials: true,
-                headers: { apiKey: "SEACRET1234567" }  
+                headers: { apiKey: "SEACRET1234567" }
             }
         );
         navigate("/login");
@@ -36,7 +37,10 @@ const Navigation = () => {
             </div>
 
             <div className="nav__left">
-                <Link onClick={sendData} className="nav__link" to="/login"> logout</Link>
+                <button className="nav__btn" onClick={handleLogout}>
+                    LOG OUT
+                </button>
+
                 <Link className="nav__icon" to="/cart" aria-label="cart">🛒</Link>
 
                 {/* <button className="nav__btn" onClick={handleLogout}>
