@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import HeroSection from "./HeroSection";
 import AdminProductModal from "./AdminProductModal";
-import { getProducts, createProduct, updateProduct } from "../../../../utils/productsApi";
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+} from "../../../../utils/productsApi";
 import "./products.css";
 
 export default function ProductsPage() {
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -14,58 +21,71 @@ export default function ProductsPage() {
   const [editInitial, setEditInitial] = useState(null);
 
   const user = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem("user") || "null"); }
-    catch { return null; }
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
   }, []);
+
   const isAdmin = !!user?.is_admin;
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/signup", { replace: true });
+    }
+  }, [user, navigate]);
 
   const load = () => {
     setLoading(true);
     setError("");
-    getProducts()
-      .then((data) => setProducts(Array.isArray(data) ? data : []))
-      .catch((e) => setError(e?.response?.data?.detail || "Error loading products"))
-      .finally(() => setLoading(false));
-  }
 
-  useEffect(() => { load(); }, []);
+    getProducts()
+      .then((data) => {
+        setProducts(Array.isArray(data) ? data : []);
+      })
+      .catch((e) => {
+        if (e?.response?.status === 401) {
+          navigate("/login", { replace: true });
+        } else {
+          setError(e?.response?.data?.detail || "Error loading products");
+        }
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (user) load();
+  }, [user]);
 
   const openAdd = () => {
     setEditInitial(null);
     setModalOpen(true);
-  }
+  };
 
-  const openEdit = (detailsProduct) => {
-    setEditInitial(detailsProduct)
+  const openEdit = (product) => {
+    setEditInitial(product);
     setModalOpen(true);
-  }
+  };
+
   const submitModal = async (payload) => {
     try {
-        if (editInitial?.id) {
+      if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payload);
-
         setProducts((prev) =>
-            prev.map((p) =>
-            p.id === editInitial.id
-                ? { ...p, ...payload, ...updated } 
-                : p
-            )
-        )
-        } else {
+          prev.map((p) => (p.id === updated.id ? updated : p))
+        );
+      } else {
         const created = await createProduct(payload);
+        setProducts((prev) => [created, ...prev]);
+      }
 
-        setProducts((prev) => [
-            created?.id ? created : { ...payload, id: Date.now() }, // fallback קטן
-            ...prev,
-        ])
-        }
-
-        setModalOpen(false);
-        setEditInitial(null);
+      setModalOpen(false);
+      setEditInitial(null);
     } catch (e) {
-        alert(e?.response?.data?.detail || "Save failed");
+      alert(e?.response?.data?.detail || "Save failed");
     }
-}
+  };
 
   return (
     <>
@@ -89,13 +109,17 @@ export default function ProductsPage() {
 
         <div className="products-grid">
           {loading
-            ? Array.from({ length: 6 }).map((_, i) => <div className="p-skel" key={i} />)
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div className="p-skel" key={i} />
+              ))
             : products.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
                   isAdmin={isAdmin}
-                  onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
+                  onDeleted={(id) =>
+                    setProducts((prev) => prev.filter((x) => x.id !== id))
+                  }
                   onEdit={openEdit}
                 />
               ))}
@@ -105,9 +129,12 @@ export default function ProductsPage() {
       <AdminProductModal
         open={modalOpen}
         initial={editInitial}
-        onClose={() => { setModalOpen(false); setEditInitial(null); }}
+        onClose={() => {
+          setModalOpen(false);
+          setEditInitial(null);
+        }}
         onSubmit={submitModal}
       />
     </>
-  )
+  );
 }

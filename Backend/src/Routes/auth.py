@@ -31,11 +31,7 @@ def signup(payload: UserCreate, response: Response, session: Session = Depends(g
             samesite="lax",
             secure=False,
             path="/",
-            domain="localhost"
-
         )
-
-
         return {
             "access_token": token,
             "token_type": "bearer",

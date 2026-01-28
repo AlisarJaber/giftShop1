@@ -2,7 +2,6 @@ import { useState } from "react";
 import "../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../../../utils/http";
-import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,21 +12,16 @@ const Login = () => {
     event.preventDefault();
 
     try {
-        const res = await http.post("/auth/login", {
-            email,
-            password,
-        }, {withCredentials: true})
+      const res = await http.post("/auth/login", { email, password });
 
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      navigate("/products")
+      navigate("/products");
     } catch (err) {
-        console.log("message:", err?.message);
-        console.log("code:", err?.code);
-        console.log("status:", err?.response?.status);
-        console.log("data:", err?.response?.data);
-        alert(err?.response?.data?.detail || err?.message || "Login failed")
+      console.log("status:", err?.response?.status);
+      console.log("data:", err?.response?.data);
+      alert(err?.response?.data?.detail || err?.message || "Login failed");
     }
   };
 
@@ -43,12 +37,8 @@ const Login = () => {
         <div className="subtitle">To enter the store you need to log in</div>
 
         <div className="auth-tabs">
-          <Link to="/signup" className="auth-tab">
-            Sign up
-          </Link>
-          <Link to="/login" className="auth-tab active">
-            Login
-          </Link>
+          <Link to="/signup" className="auth-tab">Sign up</Link>
+          <Link to="/login" className="auth-tab active">Login</Link>
         </div>
 
         <form className="auth-form" onSubmit={sendData}>
@@ -75,9 +65,7 @@ const Login = () => {
             </div>
           </div>
 
-          <button className="auth-btn" type="submit">
-            Submit
-          </button>
+          <button className="auth-btn" type="submit">Submit</button>
         </form>
       </div>
     </div>
@@ -85,6 +73,7 @@ const Login = () => {
 };
 
 export default Login;
+
 
 
 
