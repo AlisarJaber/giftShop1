@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 const Navigation = () => {
 
     const navigate = useNavigate();
+    const one = 1
 
     const handleLogout = async () => {
         await axios.post(
