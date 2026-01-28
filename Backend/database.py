@@ -1,6 +1,11 @@
 from sqlmodel import SQLModel, create_engine, Session
 
-DATABASE_URL = "postgresql://giftshop_user:giftshop123@localhost:5432/giftShop1"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL
                        , echo=True)
@@ -10,3 +15,7 @@ def create_db_and_tables():
 def get_session():
     with Session(engine) as session:
         yield session
+
+one = 1
+
+two = 2
