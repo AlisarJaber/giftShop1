@@ -41,7 +41,7 @@ const Signup = () => {
         </div>
 
         <div className="welcome">welcome</div>
-        <div className="subtitle">To enter the store you need to log in</div>
+        <div className="subtitle">To enter the store you need to signup</div>
 
         <div className="auth-tabs">
           <Link to="/signup" className="auth-tab active">
