@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import HeroSection from "./HeroSection";
 import AdminProductModal from "./AdminProductModal";
-import { getProducts, createProduct, updateProduct } from "../../../../utils/productsApi";
+import { getProducts, createProduct, updateProduct } from "../../../utils/productsApi";
 import "./products.css";
 
 export default function ProductsPage() {

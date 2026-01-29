@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 const Navigation = () => {
 
     const navigate = useNavigate();
-    const one = 1
 
     const handleLogout = async () => {
         await axios.post(
@@ -21,6 +20,20 @@ const Navigation = () => {
         navigate("/login");
 
     }
+
+    const handleShowCart = async () => {
+        try {
+            await axios.get("http://localhost:8000/carts/", {
+                withCredentials: true,
+                headers: { apiKey: "SEACRET1234567" },
+            });
+
+            navigate("/cart"); // רק אם הצליח
+        } catch (err) {
+            navigate("/login"); // או הודעה
+        }
+    };
+
 
 
     return (
@@ -41,11 +54,11 @@ const Navigation = () => {
                     LOG OUT
                 </button>
 
-                <Link className="nav__icon" to="/cart" aria-label="cart">🛒</Link>
+                <button className="nav__icon" onClick={handleShowCart} aria-label="cart">
+                    🛒
+                </button>
 
-                {/* <button className="nav__btn" onClick={handleLogout}>
-                    LOG OUT
-                </button> */}
+
             </div>
         </nav>
     )

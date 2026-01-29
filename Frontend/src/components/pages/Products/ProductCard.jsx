@@ -5,7 +5,7 @@ import {
   deleteProduct,
   getFavoriteIds,
   toggleFavorite,
-} from "../../../../utils/productsApi";
+} from "../../../utils/productsApi";
 
 export default function ProductCard({
   product,
