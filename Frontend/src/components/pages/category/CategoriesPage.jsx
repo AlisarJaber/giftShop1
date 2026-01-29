@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "./categories.css";
 
 import AdminProductModal from "../Products/AdminProductModal";
-import { createProduct, updateProduct } from "../../../../utils/productsApi";
+import { createProduct, updateProduct } from "../../../utils/productsApi"; // ✅ חשוב
 
 const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
@@ -73,6 +73,7 @@ const CategoriesPage = () => {
     fetchAll();
   }, [me]);
 
+  // אם הגיע ?search לפה -> מעבירים ל-products כי החיפוש שם בנאבר
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const s = params.get("search");
@@ -89,7 +90,7 @@ const CategoriesPage = () => {
   const shownProducts = useMemo(() => {
     if (selected === "ALL") return products;
     const id = Number(selected);
-    return products.filter((p) => Number(p.category_id) === id);
+    return (products || []).filter((p) => Number(p.category_id) === id);
   }, [products, selected]);
 
   const createCategory = async () => {
@@ -117,6 +118,7 @@ const CategoriesPage = () => {
     if (!isAdmin) return;
 
     try {
+      // אם מוסיפים מוצר בזמן שבחרנו קטגוריה ספציפית -> שייך אותה אוטומטית
       const payloadWithCategory =
         !editInitial?.id && selected !== "ALL"
           ? { ...payload, category_id: Number(selected) }
@@ -124,9 +126,7 @@ const CategoriesPage = () => {
 
       if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payloadWithCategory);
-        setProducts((prev) =>
-          prev.map((p) => (p.id === updated.id ? updated : p))
-        );
+        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       } else {
         const created = await createProduct(payloadWithCategory);
         setProducts((prev) => [created, ...prev]);
@@ -140,7 +140,11 @@ const CategoriesPage = () => {
   };
 
   if (me === undefined) {
-    return <div className="state-box" style={{ margin: 20 }}>Checking session...</div>;
+    return (
+      <div className="state-box" style={{ margin: 20 }}>
+        Checking session...
+      </div>
+    );
   }
 
   return (
@@ -159,6 +163,7 @@ const CategoriesPage = () => {
               setEditInitial(null);
               setModalOpen(true);
             }}
+            type="button"
           >
             + Add product
           </button>
@@ -170,13 +175,14 @@ const CategoriesPage = () => {
               key={c.id}
               className={String(selected) === String(c.id) ? "cat-chip active" : "cat-chip"}
               onClick={() => setSelected(String(c.id))}
+              type="button"
             >
               {c.name}
             </button>
           ))}
 
           {isAdmin && (
-            <button className="add-category-btn" onClick={() => setShowAdd(true)}>
+            <button className="add-category-btn" onClick={() => setShowAdd(true)} type="button">
               + Add Category
             </button>
           )}
@@ -195,15 +201,17 @@ const CategoriesPage = () => {
                 <div
                   className="product-image-wrap"
                   onClick={() => navigate(`/products/${p.id}`)}
+                  role="button"
+                  tabIndex={0}
                 >
                   <img
-                    src={p.image_url || "https://via.placeholder.com/400x300"}
+                    src={p.image_url || "https://via.placeholder.com/400x300?text=No+Image"}
                     alt={p.name}
                     className="product-image"
                   />
                   {p.badge && (
                     <div className="badge-row">
-                      <span className="badge">{p.badge}</span>
+                      <span className="badge">{String(p.badge).toUpperCase()}</span>
                     </div>
                   )}
                 </div>
@@ -215,11 +223,14 @@ const CategoriesPage = () => {
                     <div className="product-price">${Number(p.price).toFixed(2)}</div>
 
                     <div className="product-actions">
-                      <button className="add-to-cart-btn">Add to cart</button>
+                      <button className="add-to-cart-btn" type="button" onClick={() => navigate("/cart")}>
+                        Add to cart
+                      </button>
 
                       {isAdmin && (
                         <button
                           className="edit-product-btn"
+                          type="button"
                           onClick={() => {
                             setEditInitial(p);
                             setModalOpen(true);
@@ -250,13 +261,14 @@ const CategoriesPage = () => {
             />
 
             <div className="modal-actions">
-              <button className="modal-btn ghost" onClick={() => setShowAdd(false)}>
+              <button className="modal-btn ghost" onClick={() => setShowAdd(false)} type="button">
                 Cancel
               </button>
               <button
                 className="modal-btn primary"
                 onClick={createCategory}
                 disabled={creating}
+                type="button"
               >
                 {creating ? "Creating..." : "Create"}
               </button>
@@ -279,4 +291,3 @@ const CategoriesPage = () => {
 };
 
 export default CategoriesPage;
-
