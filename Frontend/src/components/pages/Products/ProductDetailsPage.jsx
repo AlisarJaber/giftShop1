@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getProductById } from "../../../../utils/productsApi";
+import { getProductById } from "../../../utils/productsApi";
 import "./productDetails.css";
+import { addToCart } from "../../../utils/cartApi.js";
+
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -21,9 +23,15 @@ export default function ProductDetailsPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const addToCart = () => {
-    alert("Added to cart ");
+  const addToCartHandler = async () => {
+    try {
+      await addToCart(product.id, 1);
+      alert("Added to cart!");
+    } catch (error) {
+      alert("Failed to add to cart");
+    }
   };
+
 
   if (loading) return <div className="pd-wrap">Loading...</div>;
   if (!product) return <div className="pd-wrap">Product not found</div>;
@@ -53,7 +61,7 @@ export default function ProductDetailsPage() {
           <div className="pd-desc">{product.description || "No description yet."}</div>
 
           <div className="pd-actions">
-            <button className="pd-add" onClick={addToCart}>Add to cart</button>
+            <button className="pd-add" onClick={addToCartHandler}>Add to cart</button>
             <button className="pd-ghost" onClick={() => navigate("/products")}>Continue shopping</button>
           </div>
         </div>

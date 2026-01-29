@@ -10,6 +10,6 @@ class Cart(SQLModel, table=True):
 class CartProduct(SQLModel, table=True):
     __tablename__ = "cart_product"
     id: int = Field(primary_key=True, default=None)
-    product_id: int = Field(foreign_key="products.id")
+    product_id: int = Field(foreign_key="product.id")
     cart_id: int = Field(foreign_key="carts.id")
     quantity: int 
