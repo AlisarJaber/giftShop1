@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 from database import engine
-from Models.cart import Cart, CartProduct
-from Schemas.cart import NewCartRequest, CartProductRequest, AddToCartRequest
+from src.Models.cart import Cart, CartProduct
+from src.Schemas.cart import NewCartRequest, CartProductRequest, AddToCartRequest
 from fastapi.responses import JSONResponse, Response
 # from auth_helper import get_user
 from src.Utils.jwt import create_access_token

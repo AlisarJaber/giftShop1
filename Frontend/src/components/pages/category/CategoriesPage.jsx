@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "./categories.css";
 
 import AdminProductModal from "../Products/AdminProductModal";
-import { createProduct, updateProduct } from "../../../utils/productsApi"; // ✅ חשוב
+import { createProduct, updateProduct } from "../../../utils/productsApi";
 
 const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
