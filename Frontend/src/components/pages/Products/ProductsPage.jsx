@@ -30,7 +30,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     if (user === null) return;
-    if (!user) navigate("/signup", { replace: true });
+    if (!user) navigate("/login", { replace: true });
   }, [user, navigate]);
 
   const load = () => {
