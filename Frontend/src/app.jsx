@@ -16,18 +16,31 @@ function RequireAuth({ children }) {
 }
 
 
+
 function App() {
+
+  function isLoggedIn() {
+    return !!localStorage.getItem("user");
+  }
+
   return (
     <>
-      <Navigation />
 
       <Routes>
         <Route path="/" element={<Navigate to="/signup" replace />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/products" element={ <RequireAuth>  <ProductsPage/>  </RequireAuth>}/>
-        <Route path="/products/:id" element={ <RequireAuth>  <ProductDetailsPage />  </RequireAuth>} />
-        <Route path="/cart" element={<RequireAuth>  <CartPage />  </RequireAuth>} />
+        <Route
+          path="/signup"
+          element={isLoggedIn() ? <Navigate to="/products" replace /> : <Signup />}
+        />
+
+        <Route
+          path="/login"
+          element={isLoggedIn() ? <Navigate to="/products" replace /> : <Login />}
+        />
+
+        <Route path="/products" element={<RequireAuth> <Navigation /> <ProductsPage />  </RequireAuth>} />
+        <Route path="/products/:id" element={<RequireAuth> <Navigation /> <ProductDetailsPage />  </RequireAuth>} />
+        <Route path="/cart" element={<RequireAuth> <Navigation /> <CartPage />  </RequireAuth>} />
         <Route path="*" element={<Navigate to="/signup" replace />} />
       </Routes>
     </>
