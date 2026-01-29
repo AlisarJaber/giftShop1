@@ -73,3 +73,15 @@
 .nav__btn:hover{
   background: #f4f4f4;
 }
+
+.nav__search{
+  margin-left: 16px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  outline: none;
+  min-width: 200px;
+}
+.nav__search:focus{
+  border-color: #c22303;
+}

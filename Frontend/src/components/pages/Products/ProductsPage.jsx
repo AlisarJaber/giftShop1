@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import HeroSection from "./HeroSection";
 import AdminProductModal from "./AdminProductModal";
@@ -8,6 +8,7 @@ import "./products.css";
 
 export default function ProductsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
@@ -28,7 +29,7 @@ export default function ProductsPage() {
   const isAdmin = !!user?.is_admin;
 
   useEffect(() => {
-    if (user === null) return; 
+    if (user === null) return;
     if (!user) navigate("/signup", { replace: true });
   }, [user, navigate]);
 
@@ -51,6 +52,21 @@ export default function ProductsPage() {
   useEffect(() => {
     if (user) load();
   }, [user]);
+
+  const search = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return (params.get("search") || "").trim().toLowerCase();
+  }, [location.search]);
+
+  const filteredProducts = useMemo(() => {
+    if (!search) return products;
+
+    return products.filter((p) => {
+      const name = (p.name || "").toLowerCase();
+      const badge = (p.badge || "").toLowerCase();
+      return name.includes(search) || badge.includes(search);
+    });
+  }, [products, search]);
 
   const openAdd = () => {
     if (!isAdmin) return;
@@ -85,13 +101,18 @@ export default function ProductsPage() {
 
   return (
     <>
-      <HeroSection />
+      {!search && <HeroSection />}
 
       <div className="products-page">
         <div className="products-header">
           <div>
             <h1 className="products-title">Recommended products</h1>
             <p className="products-subtitle">Our most popular gifts</p>
+            {search && !loading && !error && (
+              <p className="products-subtitle" style={{ marginTop: 10 }}>
+                Search: <b>{search}</b> ({filteredProducts.length})
+              </p>
+            )}
           </div>
 
           {isAdmin && (
@@ -102,11 +123,16 @@ export default function ProductsPage() {
         </div>
 
         {error && <div className="products-error">{error}</div>}
+        {!loading && !error && filteredProducts.length === 0 && (
+          <div className="products-error">
+            Product not found{search ? ` for "${search}"` : ""}.
+          </div>
+        )}
 
         <div className="products-grid">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => <div className="p-skel" key={i} />)
-            : products.map((p) => (
+            : filteredProducts.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
@@ -128,6 +154,7 @@ export default function ProductsPage() {
         onSubmit={submitModal}
       />
     </>
-  )
+  );
 }
+
 
