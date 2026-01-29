@@ -62,3 +62,41 @@
   font-size: 18px;
   font-weight: 800;
 }
+
+.cart-qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.cart-qty-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cart-qty-value {
+  min-width: 24px;
+  text-align: center;
+  display: inline-block;
+}
+
+.cart-delete-btn {
+  margin-left: auto;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #f1b4b4;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cart-delete-btn:hover {
+  background: #ffecec;
+}

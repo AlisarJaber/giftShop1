@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCart } from "../../../utils/cartApi";
+import { getCart, updateCartItemQuantity, deleteCartItem } from "../../../utils/cartApi";
 import { getProductById } from "../../../utils/productsApi";
 import "./cart.css";
 
@@ -15,37 +15,70 @@ const CartPage = () => {
     }, 0);
   }, [items]);
 
+
+  const loadCart = async () => {
+    const cartRows = await getCart();
+    if (!cartRows || cartRows.length === 0) {
+      setItems([]);
+      return;
+    }
+
+    const merged = await Promise.all(
+      cartRows.map(async (row) => {
+        const product = await getProductById(row.product_id);
+        return { product, quantity: row.quantity };
+      })
+    );
+
+    setItems(merged);
+  };
+
+  const handlePlus = async (productId, currentQty) => {
+    try {
+      await updateCartItemQuantity(productId, currentQty + 1);
+      await loadCart();
+    } catch (e) {
+      setError("Failed to update quantity");
+    }
+  };
+
+  const handleMinus = async (productId, currentQty) => {
+    try {
+      const nextQty = currentQty - 1;
+      // אם יורד ל-0, זה ימחק אצלך בבאקנד (כי PATCH עם quantity=0 מוחק)
+      await updateCartItemQuantity(productId, Math.max(nextQty, 0));
+      await loadCart();
+    } catch (e) {
+      setError("Failed to update quantity");
+    }
+  };
+
+  const handleDelete = async (productId) => {
+    try {
+      await deleteCartItem(productId);
+      await loadCart();
+    } catch (e) {
+      setError("Failed to delete item");
+    }
+  };
+
+
+
   useEffect(() => {
-    const load = async () => {
+    const run = async () => {
       try {
         setLoading(true);
         setError("");
-
-        const cartRows = await getCart(); // [{product_id, quantity}]
-        // אם העגלה ריקה
-        if (!cartRows || cartRows.length === 0) {
-          setItems([]);
-          return;
-        }
-
-        // מביאים פרטי מוצר לכל product_id וממזגים עם quantity
-        const merged = await Promise.all(
-          cartRows.map(async (row) => {
-            const product = await getProductById(row.product_id);
-            return { product, quantity: row.quantity };
-          })
-        );
-
-        setItems(merged);
+        await loadCart();
       } catch (e) {
         setError("Failed to load cart");
       } finally {
         setLoading(false);
       }
     };
-
-    load();
+    run();
   }, []);
+
 
   if (loading) return <div style={{ padding: 20 }}>Loading cart...</div>;
   if (error) return <div style={{ padding: 20 }}>{error}</div>;
@@ -77,8 +110,34 @@ const CartPage = () => {
                     Price: ₪{it.product?.price}
                   </div>
                   <div className="cart-item-quantity">
-                    Quantity: <b>{it.quantity}</b>
+                    <span>Quantity:</span>
+
+                    <div className="cart-qty-controls">
+                      <button
+                        className="cart-qty-btn"
+                        onClick={() => handleMinus(it.product.id, it.quantity)}
+                      >
+                        -
+                      </button>
+
+                      <b className="cart-qty-value">{it.quantity}</b>
+
+                      <button
+                        className="cart-qty-btn"
+                        onClick={() => handlePlus(it.product.id, it.quantity)}
+                      >
+                        +
+                      </button>
+
+                      <button
+                        className="cart-delete-btn"
+                        onClick={() => handleDelete(it.product.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
+
                 </div>
 
                 <div className="cart-item-total">
