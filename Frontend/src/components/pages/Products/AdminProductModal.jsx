@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCategories } from "../../../../utils/categoriesApi";
+import { getCategories } from "../../../utils/categoriesApi";
 
 export default function AdminProductModal({ open, onClose, initial, onSubmit }) {
   const [categories, setCategories] = useState([]);
