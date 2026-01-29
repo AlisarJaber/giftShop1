@@ -254,6 +254,15 @@
   flex-direction:column;
   gap:10px;
 }
+.modal-form select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: #fff;
+  font-size: 14px;
+}
+
 .modal-form input, .modal-form textarea{
   border:1px solid rgba(0,0,0,.15);
   border-radius:12px;

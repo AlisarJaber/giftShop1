@@ -6,7 +6,7 @@ from src.Routes.auth import router as auth_router
 from src.Routes.products import router as products_router
 from src.Routes.favorites import router as favorites_router
 from src.Routes.cart import router as carts_router
-
+from src.Routes.category import router as categoryRouter
 from src.Utils.api_key import verify_api_key
 
 app = FastAPI(title="Gift Shop API")
@@ -36,4 +36,4 @@ app.include_router(auth_router, dependencies=[Depends(verify_api_key)])
 app.include_router(products_router, dependencies=[Depends(verify_api_key)])
 app.include_router(favorites_router, dependencies=[Depends(verify_api_key)])
 app.include_router(carts_router, dependencies=[Depends(verify_api_key)])
-
+app.include_router(categoryRouter, dependencies=[Depends(verify_api_key)])

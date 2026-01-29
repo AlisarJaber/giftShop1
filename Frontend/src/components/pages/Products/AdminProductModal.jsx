@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
+import { getCategories } from "../../../../utils/categoriesApi";
 
 export default function AdminProductModal({ open, onClose, initial, onSubmit }) {
+  const [categories, setCategories] = useState([]);
+  const [catError, setCatError] = useState("");
+
   const [form, setForm] = useState({
     name: "",
     price: 0,
@@ -8,7 +12,17 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
     badge: "",
     image_url: "",
     description: "",
+    category_id: "", // ✅ חדש (string כדי להתאים ל-select)
   });
+
+  useEffect(() => {
+    if (!open) return;
+
+    setCatError("");
+    getCategories()
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => setCatError("Failed to load categories"));
+  }, [open]);
 
   useEffect(() => {
     if (initial) {
@@ -19,6 +33,7 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
         badge: initial.badge || "",
         image_url: initial.image_url || "",
         description: initial.description || "",
+        category_id: initial.category_id ? String(initial.category_id) : "", // ✅ חדש
       });
     } else {
       setForm({
@@ -28,6 +43,7 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
         badge: "",
         image_url: "",
         description: "",
+        category_id: "", // ✅ חדש
       });
     }
   }, [initial, open]);
@@ -38,6 +54,7 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
 
   const submit = async (e) => {
     e.preventDefault();
+
     await onSubmit({
       name: form.name.trim(),
       price: Number(form.price),
@@ -45,6 +62,9 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
       badge: form.badge.trim() || null,
       image_url: form.image_url.trim() || null,
       description: form.description.trim() || null,
+
+      // ✅ חדש: category_id (אם לא בחרו, שולחים null)
+      category_id: form.category_id ? Number(form.category_id) : null,
     });
   };
 
@@ -59,6 +79,27 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
         <form className="modal-form" onSubmit={submit}>
           <label>Name</label>
           <input value={form.name} onChange={(e) => set("name", e.target.value)} required />
+
+          {/* ✅ Category select */}
+          <label>Category</label>
+          {catError ? (
+            <div className="products-error" style={{ marginBottom: 8 }}>{catError}</div>
+          ) : (
+            <select
+              value={form.category_id}
+              onChange={(e) => set("category_id", e.target.value)}
+              required
+            >
+              <option value="" disabled>
+                Select a category...
+              </option>
+              {categories.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
 
           <label>Price</label>
           <input type="number" value={form.price} onChange={(e) => set("price", e.target.value)} min="0" required />
@@ -84,3 +125,4 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
     </div>
   );
 }
+

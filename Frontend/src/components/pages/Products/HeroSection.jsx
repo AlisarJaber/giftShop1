@@ -1,6 +1,8 @@
 import "./hero.css";
+import { useNavigate } from "react-router-dom";
 
 export default function HeroSection() {
+  const navigate = useNavigate();
   return (
     <section className="hero">
       <div
@@ -27,8 +29,7 @@ export default function HeroSection() {
           <button className="hero-btn hero-btn-secondary">
             Customization
           </button>
-
-          <button className="hero-btn hero-btn-primary">
+          <button className="hero-btn hero-btn-primary" onClick={()=> navigate("/categories")}>
             <span className="arrow">←</span> For all gifts
           </button>
         </div>
