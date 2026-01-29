@@ -63,7 +63,6 @@ def login(payload: UserLogin, response: Response, session: Session = Depends(get
         samesite="lax",
         secure=False,
         path="/",
-        domain="localhost"
     )
 
 
@@ -93,6 +92,6 @@ def me(current_user=Depends(get_current_user)):
 
 @router.post("/logout")
 def logout(response: Response):
-    response.delete_cookie(key="access_token", path="/", domain="localhost"
+    response.delete_cookie(key="access_token", path="/"
 )
     return {"ok": True}

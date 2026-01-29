@@ -45,6 +45,7 @@ const Navigation = () => {
   };
 
   return (
+    
     <nav className="nav">
       <div className="nav__right">
         <span className="nav__logo">🎁</span>
