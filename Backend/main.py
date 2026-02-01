@@ -7,7 +7,12 @@ from src.Routes.products import router as products_router
 from src.Routes.favorites import router as favorites_router
 from src.Routes.cart import router as carts_router
 from src.Routes.category import router as categoryRouter
+from src.Routes.sinCategory import router as single_category_router
+from src.Routes.sinProduct import router as single_product_router
+
 from src.Utils.api_key import verify_api_key
+
+
 
 app = FastAPI(title="Gift Shop API")
 

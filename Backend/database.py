@@ -11,7 +11,10 @@ from src.Models.user import User
 from src.Models.product import Product
 from src.Models.category import Category
 from src.Models.cart import Cart
+from src.Models.sinCategory import SinCategory
+from src.Models.sinProduct import SinProduct
 from src.Models.favorite import Favorite
+
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
