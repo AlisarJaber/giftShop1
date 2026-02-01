@@ -15,14 +15,7 @@ const Signup = () => {
     event.preventDefault();
 
     try {
-      const res = await http.post(
-        "/auth/signup",
-        { first_name, last_name, email, password },
-        { withCredentials: true }
-      )
-
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      const res = await http.post("/auth/signup", { first_name, last_name, email, password });
 
       if (res?.data?.access_token) {
         localStorage.setItem("token", res.data.access_token);
@@ -31,6 +24,7 @@ const Signup = () => {
         localStorage.setItem("user", JSON.stringify(res.data.user));
       }
 
+      window.dispatchEvent(new Event("auth-change"));
       navigate("/products", { replace: true });
     } catch (err) {
       alert(err?.response?.data?.detail || "Signup failed");
@@ -111,4 +105,3 @@ const Signup = () => {
 };
 
 export default Signup;
-

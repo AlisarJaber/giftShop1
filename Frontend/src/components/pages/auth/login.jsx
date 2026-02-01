@@ -16,11 +16,10 @@ const Login = () => {
 
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      window.dispatchEvent(new Event("auth-change"));
 
-      navigate("/products");
+      navigate("/products", { replace: true });
     } catch (err) {
-      console.log("status:", err?.response?.status);
-      console.log("data:", err?.response?.data);
       alert(err?.response?.data?.detail || err?.message || "Login failed");
     }
   };
@@ -73,7 +72,3 @@ const Login = () => {
 };
 
 export default Login;
-
-
-
-
