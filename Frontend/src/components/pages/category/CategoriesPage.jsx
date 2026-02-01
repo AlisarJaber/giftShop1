@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./categories.css";
-
+import "../Products/products.css";
 import AdminProductModal from "../Products/AdminProductModal";
 import ProductCard from "../Products/ProductCard";
 import { createProduct, updateProduct } from "../../../utils/productsApi";
@@ -65,6 +65,9 @@ export default function CategoriesPage() {
 
   const isAdmin = !!me?.is_admin;
 
+  const PAGE_SIZE = 9;
+  const [page, setPage] = useState(1);
+
   useEffect(() => {
     axios
       .get(`${API}/auth/me`, {
@@ -121,6 +124,17 @@ export default function CategoriesPage() {
     const id = Number(selected);
     return (products || []).filter((p) => Number(p.category_id) === id);
   }, [products, selected]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selected]);
+
+  const pageCount = Math.max(1, Math.ceil(shownProducts.length / PAGE_SIZE));
+
+  const pagedProducts = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return shownProducts.slice(start, start + PAGE_SIZE);
+  }, [shownProducts, page]);
 
   const createCategory = async () => {
     const name = newName.trim();
@@ -248,20 +262,49 @@ export default function CategoriesPage() {
         ) : shownProducts.length === 0 ? (
           <div className="state-box">No products found in this category.</div>
         ) : (
-          <div className="products-grid">
-            {shownProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                isAdmin={isAdmin}
-                onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
-                onEdit={(fullProduct) => {
-                  setEditInitial(fullProduct);
-                  setModalOpen(true);
-                }}
-              />
-            ))}
-          </div>
+          <>
+            <div className="cat-products-grid">
+              {pagedProducts.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  isAdmin={isAdmin}
+                  showAddToCart={true}
+                  onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
+                  onEdit={(data) => {
+                    setEditInitial(data);
+                    setModalOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+
+            {pageCount > 1 && (
+              <div className="pager">
+                <button
+                  className="pager-btn"
+                  onClick={() => setPage((x) => Math.max(1, x - 1))}
+                  disabled={page === 1}
+                  type="button"
+                >
+                  Prev
+                </button>
+
+                <div className="pager-info">
+                  Page {page} / {pageCount}
+                </div>
+
+                <button
+                  className="pager-btn"
+                  onClick={() => setPage((x) => Math.min(pageCount, x + 1))}
+                  disabled={page === pageCount}
+                  type="button"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -278,10 +321,19 @@ export default function CategoriesPage() {
             />
 
             <div className="modal-actions">
-              <button className="modal-btn ghost" onClick={() => setShowAdd(false)} type="button">
+              <button
+                className="modal-btn ghost"
+                onClick={() => setShowAdd(false)}
+                type="button"
+              >
                 Cancel
               </button>
-              <button className="modal-btn primary" onClick={createCategory} disabled={creating} type="button">
+              <button
+                className="modal-btn primary"
+                onClick={createCategory}
+                disabled={creating}
+                type="button"
+              >
                 {creating ? "Creating..." : "Create"}
               </button>
             </div>
