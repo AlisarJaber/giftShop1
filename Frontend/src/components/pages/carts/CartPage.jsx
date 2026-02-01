@@ -84,78 +84,120 @@ const CartPage = () => {
   if (error) return <div style={{ padding: 20 }}>{error}</div>;
 
   return (
-    <div className="cart-container">
-      <h2 className="cart-title">My Cart</h2>
+    <div className="cart-page">
+      <div className="cart-container">
+        <div className="cart-header">
+          <h2 className="cart-title">Your Shopping Cart</h2>
+          <p className="cart-subtitle">Review your items before checkout</p>
+        </div>
 
-      {items.length === 0 ? (
-        <div className="cart-empty">Your cart is empty 🛒</div>
-      ) : (
-        <>
-          <div className="cart-list">
-            {items.map((it) => (
-              <div key={it.product?.id} className="cart-item">
-                <img
-                  src={
-                    it.product?.image_url ||
-                    it.product?.image ||
-                    "https://via.placeholder.com/90"
-                  }
-                  alt={it.product?.name || "product"}
-                  className="cart-item-image"
-                />
+        {items.length === 0 ? (
+          <div className="cart-empty">Your cart is empty 🛒</div>
+        ) : (
+          <div className="cart-content">
+            {/* LEFT: Order Summary */}
+            <aside className="cart-summary-card">
+              <div className="cart-summary-title">Order Summary</div>
 
-                <div>
-                  <div className="cart-item-name">{it.product?.name}</div>
-                  <div className="cart-item-price">
-                    Price: ₪{it.product?.price}
-                  </div>
-                  <div className="cart-item-quantity">
-                    <span>Quantity:</span>
+              <div className="cart-summary-row">
+                <span>Total Items</span>
+                <span>{items.reduce((s, it) => s + it.quantity, 0)}</span>
+              </div>
 
-                    <div className="cart-qty-controls">
-                      <button
-                        className="cart-qty-btn"
-                        onClick={() => handleMinus(it.product.id, it.quantity)}
-                      >
-                        -
-                      </button>
+              <div className="cart-summary-row">
+                <span>Total Price</span>
+                <span className="cart-summary-total">₪{total}</span>
+              </div>
 
-                      <b className="cart-qty-value">{it.quantity}</b>
+              <button className="cart-checkout-btn">Proceed to Checkout</button>
+              <button className="cart-continue-btn">Continue Shopping</button>
 
-                      <button
-                        className="cart-qty-btn"
-                        onClick={() => handlePlus(it.product.id, it.quantity)}
-                      >
-                        +
-                      </button>
+              <div className="cart-summary-note">
+                Secure payment • Customer support available
+              </div>
+            </aside>
 
-                      <button
-                        className="cart-delete-btn"
-                        onClick={() => handleDelete(it.product.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-
-                <div className="cart-item-total">
-                  ₪{Number(it.product?.price ?? 0) * it.quantity}
+            {/* RIGHT: Cart Items */}
+            <section className="cart-items">
+              <div className="cart-items-toprow">
+                <div className="cart-items-count">
+                  {items.length} items in cart
                 </div>
               </div>
-            ))}
-          </div>
 
-          <div className="cart-summary">
-            <span>Total</span>
-            <span>₪{total}</span>
+              <div className="cart-list">
+                {items.map((it) => (
+                  <div key={it.product?.id} className="cart-item">
+                    {/* Details */}
+                    <div className="cart-item-main">
+                      <div className="cart-item-line1">
+                        <div className="cart-item-name">
+                          {it.product?.name}
+                        </div>
+
+                        <button
+                          className="cart-delete-icon"
+                          onClick={() => handleDelete(it.product.id)}
+                          title="Remove item"
+                        >
+                          🗑
+                        </button>
+                      </div>
+
+                      <div className="cart-item-prices">
+                        <span className="cart-item-unit">
+                          ₪{it.product?.price} per item
+                        </span>
+                        <span className="cart-item-total">
+                          ₪{Number(it.product?.price ?? 0) * it.quantity}
+                        </span>
+                      </div>
+
+                      <div className="cart-qty-pill" dir="ltr">
+                        <button
+                          className="cart-qty-pill-btn"
+                          onClick={() =>
+                            handleMinus(it.product.id, it.quantity)
+                          }
+                        >
+                          −
+                        </button>
+
+                        <span className="cart-qty-pill-value">
+                          {it.quantity}
+                        </span>
+
+                        <button
+                          className="cart-qty-pill-btn"
+                          onClick={() =>
+                            handlePlus(it.product.id, it.quantity)
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Image */}
+                    <img
+                      src={
+                        it.product?.image_url ||
+                        it.product?.image ||
+                        "https://via.placeholder.com/90"
+                      }
+                      alt={it.product?.name || "product"}
+                      className="cart-item-image"
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
-
   );
+
 }
 
 export default CartPage
