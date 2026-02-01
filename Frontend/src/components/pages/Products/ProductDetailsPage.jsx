@@ -4,17 +4,25 @@ import { getProductById } from "../../../utils/productsApi";
 import "./productDetails.css";
 import { addToCart } from "../../../utils/cartApi.js";
 
-
 export default function ProductDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
 
   const isAdmin = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem("user") || "null")?.is_admin; }
-    catch { return false; }
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null")?.is_admin;
+    } catch {
+      return false;
+    }
   }, []);
+
+  const reload = async () => {
+    const p = await getProductById(id);
+    setProduct(p);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -24,21 +32,37 @@ export default function ProductDetailsPage() {
   }, [id]);
 
   const addToCartHandler = async () => {
+    if (!product) return;
+    if (Number(product.quantity) <= 0) return;
+
     try {
+      setAdding(true);
       await addToCart(product.id, 1);
       alert("Added to cart!");
+      await reload();
     } catch (error) {
-      alert("Failed to add to cart");
+      const msg =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        "Failed to add to cart";
+      alert(msg);
+    } finally {
+      setAdding(false);
     }
   };
-
 
   if (loading) return <div className="pd-wrap">Loading...</div>;
   if (!product) return <div className="pd-wrap">Product not found</div>;
 
+  const qty = Number(product.quantity || 0);
+  const outOfStock = qty <= 0;
+  const lowStock = qty > 0 && qty <= 5;
+
   return (
     <div className="pd-wrap">
-      <button className="pd-back" onClick={() => navigate(-1)}>← Back</button>
+      <button className="pd-back" onClick={() => navigate(-1)}>
+        ← Back
+      </button>
 
       <div className="pd-card">
         <div className="pd-imgBox">
@@ -55,15 +79,45 @@ export default function ProductDetailsPage() {
           </div>
 
           <div className="pd-price">₪{product.price}</div>
-          <div className="pd-qty">In stock: {product.quantity}</div>
+
+          <div className="pd-qty">
+            In stock: <b>{qty}</b>{" "}
+            {outOfStock ? (
+              <span style={{ marginLeft: 10, color: "#c22303", fontWeight: 800 }}>
+                Out of stock
+              </span>
+            ) : lowStock ? (
+              <span style={{ marginLeft: 10, color: "#c22303", fontWeight: 800 }}>
+                Only {qty} left
+              </span>
+            ) : null}
+          </div>
 
           <div className="pd-descTitle">Description</div>
           <div className="pd-desc">{product.description || "No description yet."}</div>
 
           <div className="pd-actions">
-            <button className="pd-add" onClick={addToCartHandler}>Add to cart</button>
-            <button className="pd-ghost" onClick={() => navigate("/products")}>Continue shopping</button>
+            <button
+              className="pd-add"
+              onClick={addToCartHandler}
+              disabled={outOfStock || adding}
+              style={{
+                opacity: outOfStock ? 0.55 : 1,
+                cursor: outOfStock ? "not-allowed" : "pointer",
+              }}
+            >
+              {outOfStock ? "Out of stock" : adding ? "Adding..." : "Add to cart"}
+            </button>
+
+            <button className="pd-ghost" onClick={() => navigate("/products")}>
+              Continue shopping
+            </button>
           </div>
+
+          {isAdmin ? (
+            <div style={{ marginTop: 14, fontSize: 13, opacity: 0.8 }}>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
