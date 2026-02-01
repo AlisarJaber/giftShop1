@@ -85,3 +85,15 @@
 .nav__search:focus{
   border-color: #c22303;
 }
+.nav__hello {
+  margin-right: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
+
