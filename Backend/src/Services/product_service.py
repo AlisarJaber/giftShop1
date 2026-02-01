@@ -7,8 +7,12 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 
 def get_all_products(session: Session) -> List[Product]:
-    statement = select(Product).where(Product.is_active == True)
+    statement = select(Product).where(
+        Product.is_active == True,
+        Product.is_custom_box == False
+    )
     return session.exec(statement).all()
+
 
 
 def get_product_by_id(session: Session, product_id: int) -> Optional[Product]:
