@@ -58,7 +58,11 @@
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
+  position: absolute; 
+  top: 18px;
+  right: 18px;
 }
+
 
 .pd-price{
   margin-top: 10px;
@@ -116,3 +120,11 @@
   .pd-card{ grid-template-columns: 1fr; }
   .pd-imgBox{ min-height: 360px; }
 }
+.pd-info{
+  padding: 18px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
