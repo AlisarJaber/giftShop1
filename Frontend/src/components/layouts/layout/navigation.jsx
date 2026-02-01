@@ -93,6 +93,18 @@ const Navigation = () => {
                 <Link className="nav__link" to="/products">Home</Link>
                 <Link className="nav__link" to="/categories">Categories</Link>
                 <Link className="nav__link" to="/personal">Personalized Gifts</Link>
+                {(() => {
+                    try {
+                      const user = JSON.parse(localStorage.getItem("user"));
+                      return user?.is_admin ? (
+                        <Link to="/admin/carts" className="nav__link">
+                          Admin Carts
+                        </Link>
+                      ) : null;
+                    } catch {
+                      return null;
+                    }
+                  })()}
 
                 <input
                     className="nav__search"
@@ -117,6 +129,8 @@ const Navigation = () => {
                 )}
 
                 <Link className="nav__icon" to="/cart">🛒</Link>
+                <Link to="/favorites" className="nav__iconLink" title="Favorites">❤️</Link>
+
             </div>
         </nav>
     );

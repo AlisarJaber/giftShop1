@@ -6,6 +6,8 @@ import AdminProductModal from "./AdminProductModal";
 import { getProducts, createProduct, updateProduct } from "../../../utils/productsApi";
 import "./products.css";
 
+const RECOMMENDED_BADGES = new Set(["recommended", "popular", "featured"]);
+
 export default function ProductsPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,6 +70,17 @@ export default function ProductsPage() {
     });
   }, [products, search]);
 
+  const recommendedOnly = useMemo(() => {
+    return (products || []).filter((p) => {
+      const b = String(p.badge || "").trim().toLowerCase();
+      return RECOMMENDED_BADGES.has(b);
+    });
+  }, [products]);
+
+  const shown = useMemo(() => {
+    return search ? filteredProducts : recommendedOnly;
+  }, [search, filteredProducts, recommendedOnly]);
+
   const openAdd = () => {
     if (!isAdmin) return;
     setEditInitial(null);
@@ -106,11 +119,14 @@ export default function ProductsPage() {
       <div className="products-page">
         <div className="products-header">
           <div>
-            <h1 className="products-title">Recommended products</h1>
-            <p className="products-subtitle">Our most popular gifts</p>
+            <h1 className="products-title">{search ? "Search results" : "Recommended products"}</h1>
+            <p className="products-subtitle">
+              {search ? "Results by name / badge" : "Our most popular gifts"}
+            </p>
+
             {search && !loading && !error && (
               <p className="products-subtitle" style={{ marginTop: 10 }}>
-                Search: <b>{search}</b> ({filteredProducts.length})
+                Search: <b>{search}</b> ({shown.length})
               </p>
             )}
           </div>
@@ -123,16 +139,19 @@ export default function ProductsPage() {
         </div>
 
         {error && <div className="products-error">{error}</div>}
-        {!loading && !error && filteredProducts.length === 0 && (
+
+        {!loading && !error && shown.length === 0 && (
           <div className="products-error">
-            Product not found{search ? ` for "${search}"` : ""}.
+            {search
+              ? `Product not found for "${search}".`
+              : 'No recommended products yet. (Set badge to "recommended" / "popular" / "featured")'}
           </div>
         )}
 
         <div className="products-grid">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => <div className="p-skel" key={i} />)
-            : filteredProducts.map((p) => (
+            : shown.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
@@ -156,5 +175,3 @@ export default function ProductsPage() {
     </>
   );
 }
-
-
