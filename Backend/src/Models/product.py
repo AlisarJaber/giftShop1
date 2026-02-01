@@ -16,4 +16,6 @@ class Product(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     category_id: Optional[int] = Field(default=None, foreign_key="categories.id", index=True)
+    is_custom_box: bool = Field(default=False)
+
     
