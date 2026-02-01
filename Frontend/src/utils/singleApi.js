@@ -4,7 +4,7 @@ const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
 
 export const getSingleCategories = async () => {
-  const res = await axios.get(`${API}/single-categories`, {
+  const res = await axios.get(`${API}/single-categories/`, {
     headers: { apiKey: APIKEY },
     withCredentials: true,
   });
