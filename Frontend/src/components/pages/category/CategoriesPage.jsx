@@ -6,8 +6,43 @@ import "./categories.css";
 import AdminProductModal from "../Products/AdminProductModal";
 import { createProduct, updateProduct } from "../../../utils/productsApi";
 
+import {
+  Home,
+  Gift,
+  Sparkles,
+  Heart,
+  Cake,
+  PartyPopper,
+  ShoppingBag,
+  Baby,
+  GraduationCap,
+  BriefcaseBusiness,
+  Gem,
+  Smile,
+} from "lucide-react";
+
 const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
+
+const CATEGORY_ICONS = [
+  { match: ["home", "house"], icon: Home },
+  { match: ["birthday", "bday"], icon: Cake },
+  { match: ["baby", "newborn"], icon: Baby },
+  { match: ["love", "valentine"], icon: Heart },
+  { match: ["wedding"], icon: Gem },
+  { match: ["holiday", "eid", "ramadan", "christmas"], icon: Sparkles },
+  { match: ["work", "office", "business"], icon: BriefcaseBusiness },
+  { match: ["graduation", "school"], icon: GraduationCap },
+  { match: ["party", "celebration"], icon: PartyPopper },
+  { match: ["gift"], icon: Gift },
+  { match: ["shop", "store"], icon: ShoppingBag },
+];
+
+function pickIconByName(name) {
+  const n = String(name || "").toLowerCase();
+  const hit = CATEGORY_ICONS.find((x) => x.match.some((m) => n.includes(m)));
+  return hit?.icon || Smile;
+}
 
 const CategoriesPage = () => {
   const navigate = useNavigate();
@@ -73,7 +108,6 @@ const CategoriesPage = () => {
     fetchAll();
   }, [me]);
 
-  // אם הגיע ?search לפה -> מעבירים ל-products כי החיפוש שם בנאבר
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const s = params.get("search");
@@ -81,11 +115,6 @@ const CategoriesPage = () => {
       navigate(`/products?search=${encodeURIComponent(s)}`, { replace: true });
     }
   }, [location.search, navigate]);
-
-  const buttons = useMemo(
-    () => [{ id: "ALL", name: "All" }, ...(categories || [])],
-    [categories]
-  );
 
   const shownProducts = useMemo(() => {
     if (selected === "ALL") return products;
@@ -104,6 +133,7 @@ const CategoriesPage = () => {
         { name },
         { withCredentials: true, headers: { apiKey: APIKEY } }
       );
+
       setCategories((prev) => [res.data, ...prev]);
       setNewName("");
       setShowAdd(false);
@@ -118,7 +148,6 @@ const CategoriesPage = () => {
     if (!isAdmin) return;
 
     try {
-      // אם מוסיפים מוצר בזמן שבחרנו קטגוריה ספציפית -> שייך אותה אוטומטית
       const payloadWithCategory =
         !editInitial?.id && selected !== "ALL"
           ? { ...payload, category_id: Number(selected) }
@@ -126,7 +155,9 @@ const CategoriesPage = () => {
 
       if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payloadWithCategory);
-        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        setProducts((prev) =>
+          prev.map((p) => (p.id === updated.id ? updated : p))
+        );
       } else {
         const created = await createProduct(payloadWithCategory);
         setProducts((prev) => [created, ...prev]);
@@ -155,38 +186,66 @@ const CategoriesPage = () => {
           Explore our collection and find the perfect gift by category
         </p>
 
-        {isAdmin && (
+        <div className="categories-cards" dir="ltr">
           <button
-            className="admin-add"
-            style={{ marginTop: 12 }}
-            onClick={() => {
-              setEditInitial(null);
-              setModalOpen(true);
-            }}
             type="button"
+            className={selected === "ALL" ? "cat-card active" : "cat-card"}
+            onClick={() => setSelected("ALL")}
           >
-            + Add product
+            <div className="cat-icon">
+              <Sparkles size={18} />
+            </div>
+            <div className="cat-text">
+              <div className="cat-name">All</div>
+              <div className="cat-sub">All gifts</div>
+            </div>
           </button>
-        )}
 
-        <div className="categories-bar" dir="ltr">
-          {buttons.map((c) => (
+          {(categories || []).map((c) => {
+            const Icon = pickIconByName(c.name);
+            const isActive = String(selected) === String(c.id);
+
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={isActive ? "cat-card active" : "cat-card"}
+                onClick={() => setSelected(String(c.id))}
+              >
+                <div className="cat-icon">
+                  <Icon size={18} />
+                </div>
+                <div className="cat-text">
+                  <div className="cat-name">{c.name}</div>
+                  <div className="cat-sub">Gifts for {c.name}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {isAdmin && (
+          <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button
-              key={c.id}
-              className={String(selected) === String(c.id) ? "cat-chip active" : "cat-chip"}
-              onClick={() => setSelected(String(c.id))}
+              className="admin-add"
+              onClick={() => {
+                setEditInitial(null);
+                setModalOpen(true);
+              }}
               type="button"
             >
-              {c.name}
+              + Add product
             </button>
-          ))}
 
-          {isAdmin && (
-            <button className="add-category-btn" onClick={() => setShowAdd(true)} type="button">
+            <button
+              className="add-category-btn"
+              onClick={() => setShowAdd(true)}
+              type="button"
+            >
               + Add Category
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       <section className="products-section">
@@ -205,7 +264,10 @@ const CategoriesPage = () => {
                   tabIndex={0}
                 >
                   <img
-                    src={p.image_url || "https://via.placeholder.com/400x300?text=No+Image"}
+                    src={
+                      p.image_url ||
+                      "https://via.placeholder.com/400x300?text=No+Image"
+                    }
                     alt={p.name}
                     className="product-image"
                   />
@@ -220,10 +282,16 @@ const CategoriesPage = () => {
                   <div className="product-name">{p.name}</div>
 
                   <div className="product-bottom">
-                    <div className="product-price">${Number(p.price).toFixed(2)}</div>
+                    <div className="product-price">
+                      ${Number(p.price).toFixed(2)}
+                    </div>
 
                     <div className="product-actions">
-                      <button className="add-to-cart-btn" type="button" onClick={() => navigate("/cart")}>
+                      <button
+                        className="add-to-cart-btn"
+                        type="button"
+                        onClick={() => navigate("/cart")}
+                      >
                         Add to cart
                       </button>
 
@@ -261,7 +329,11 @@ const CategoriesPage = () => {
             />
 
             <div className="modal-actions">
-              <button className="modal-btn ghost" onClick={() => setShowAdd(false)} type="button">
+              <button
+                className="modal-btn ghost"
+                onClick={() => setShowAdd(false)}
+                type="button"
+              >
                 Cancel
               </button>
               <button
