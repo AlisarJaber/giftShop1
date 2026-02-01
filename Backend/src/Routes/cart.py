@@ -1,15 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
-from database import engine
 from src.Models.cart import Cart, CartProduct
-from src.Schemas.cart import NewCartRequest, CartProductRequest, AddToCartRequest
-from fastapi.responses import JSONResponse, Response
-# from auth_helper import get_user
-from src.Utils.jwt import create_access_token
-from src.Utils.deps import get_current_user
+from src.Schemas.cart import AddToCartRequest
+from src.Utils.deps import get_current_user, require_admin
 from database import get_session
 from src.Models.user import User
-
+from src.Models.product import Product
 
 router = APIRouter(prefix="/carts", tags=["carts"])
 
@@ -71,10 +67,11 @@ def get_my_cart(
 
     return cart_items
 
+
 @router.patch("/items/{product_id}")
 def update_item_quantity(
     product_id: int,
-    quantity: int,  # מגיע ב-query: ?quantity=3
+    quantity: int,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
@@ -93,7 +90,6 @@ def update_item_quantity(
     if not cart_item:
         raise HTTPException(status_code=404, detail="Item not found in cart")
 
-    # אם quantity == 0 מוחקים
     if quantity == 0:
         session.delete(cart_item)
         session.commit()
@@ -104,6 +100,7 @@ def update_item_quantity(
     session.commit()
     session.refresh(cart_item)
     return cart_item
+
 
 @router.delete("/items/{product_id}")
 def delete_item_from_cart(
@@ -126,3 +123,47 @@ def delete_item_from_cart(
     session.delete(cart_item)
     session.commit()
     return {"message": "Item deleted"}
+
+
+@router.get("/admin/all")
+def admin_list_all_carts(
+    session: Session = Depends(get_session),
+    admin=Depends(require_admin),
+):
+    carts = session.exec(select(Cart).order_by(Cart.id.desc())).all()
+    result = []
+
+    for cart in carts:
+        cart_items = session.exec(
+            select(CartProduct).where(CartProduct.cart_id == cart.id)
+        ).all()
+
+        items = []
+        total_price = 0
+
+        for it in cart_items:
+            product = session.get(Product, it.product_id)
+            price = int(product.price) if product and product.price is not None else 0
+            qty = int(it.quantity or 0)
+            total_price += price * qty
+
+            items.append(
+                {
+                    "product_id": it.product_id,
+                    "product_name": product.name if product else None,
+                    "product_price": price if product else None,
+                    "quantity": qty,
+                }
+            )
+
+        result.append(
+            {
+                "id": cart.id,
+                "user_id": cart.user_id,
+                "is_paid": cart.is_paid,
+                "total_price": total_price,
+                "items": items,
+            }
+        )
+
+    return result

@@ -1,0 +1,93 @@
+.admin-carts-wrap {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+  padding: 24px 0 60px;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial;
+}
+
+.admin-carts-title {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.admin-carts-sub {
+  margin: 6px 0 18px;
+  opacity: 0.75;
+}
+
+.admin-carts-empty {
+  background: #fff;
+  border: 1px solid #eee7e1;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.cart-row {
+  background: #fff;
+  border: 1px solid #eee7e1;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+}
+
+.cart-row-title {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.cart-row-meta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.paid {
+  color: #0f7a2a;
+  font-weight: 900;
+}
+
+.open {
+  color: #c22303;
+  font-weight: 900;
+}
+
+.cart-items {
+  margin-top: 12px;
+  border-top: 1px solid #f1ebe6;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cart-item-line {
+  display: grid;
+  grid-template-columns: 1fr 70px 90px;
+  gap: 10px;
+  align-items: center;
+}
+
+.ci-name {
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ci-qty {
+  text-align: center;
+  font-weight: 900;
+}
+
+.ci-price {
+  text-align: left;
+  font-weight: 900;
+  color: #c22303;
+}
+
+.cart-items-empty {
+  color: #777;
+  font-size: 13px;
+}

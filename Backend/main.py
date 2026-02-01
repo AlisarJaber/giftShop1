@@ -42,5 +42,4 @@ app.include_router(products_router, dependencies=[Depends(verify_api_key)])
 app.include_router(favorites_router, dependencies=[Depends(verify_api_key)])
 app.include_router(carts_router, dependencies=[Depends(verify_api_key)])
 app.include_router(categoryRouter, dependencies=[Depends(verify_api_key)])
-app.include_router(single_category_router, dependencies=[Depends(verify_api_key)])
-app.include_router(single_product_router, dependencies=[Depends(verify_api_key)])
+
