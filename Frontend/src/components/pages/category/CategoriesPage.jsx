@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "./categories.css";
 
 import AdminProductModal from "../Products/AdminProductModal";
+import ProductCard from "../Products/ProductCard";
 import { createProduct, updateProduct } from "../../../utils/productsApi";
 
 import {
@@ -44,7 +45,7 @@ function pickIconByName(name) {
   return hit?.icon || Smile;
 }
 
-const CategoriesPage = () => {
+export default function CategoriesPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -98,7 +99,6 @@ const CategoriesPage = () => {
         setCategories(catRes.data || []);
         setProducts(prodRes.data || []);
       } catch (e) {
-        console.error(e);
         alert("Failed to load categories/products");
       } finally {
         setLoading(false);
@@ -155,9 +155,7 @@ const CategoriesPage = () => {
 
       if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payloadWithCategory);
-        setProducts((prev) =>
-          prev.map((p) => (p.id === updated.id ? updated : p))
-        );
+        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       } else {
         const created = await createProduct(payloadWithCategory);
         setProducts((prev) => [created, ...prev]);
@@ -171,11 +169,7 @@ const CategoriesPage = () => {
   };
 
   if (me === undefined) {
-    return (
-      <div className="state-box" style={{ margin: 20 }}>
-        Checking session...
-      </div>
-    );
+    return <div className="state-box" style={{ margin: 20 }}>Checking session...</div>;
   }
 
   return (
@@ -256,61 +250,16 @@ const CategoriesPage = () => {
         ) : (
           <div className="products-grid">
             {shownProducts.map((p) => (
-              <div key={p.id} className="product-card">
-                <div
-                  className="product-image-wrap"
-                  onClick={() => navigate(`/products/${p.id}`)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <img
-                    src={
-                      p.image_url ||
-                      "https://via.placeholder.com/400x300?text=No+Image"
-                    }
-                    alt={p.name}
-                    className="product-image"
-                  />
-                  {p.badge && (
-                    <div className="badge-row">
-                      <span className="badge">{String(p.badge).toUpperCase()}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="product-info">
-                  <div className="product-name">{p.name}</div>
-
-                  <div className="product-bottom">
-                    <div className="product-price">
-                      ${Number(p.price).toFixed(2)}
-                    </div>
-
-                    <div className="product-actions">
-                      <button
-                        className="add-to-cart-btn"
-                        type="button"
-                        onClick={() => navigate("/cart")}
-                      >
-                        Add to cart
-                      </button>
-
-                      {isAdmin && (
-                        <button
-                          className="edit-product-btn"
-                          type="button"
-                          onClick={() => {
-                            setEditInitial(p);
-                            setModalOpen(true);
-                          }}
-                        >
-                          Edit
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ProductCard
+                key={p.id}
+                product={p}
+                isAdmin={isAdmin}
+                onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
+                onEdit={(fullProduct) => {
+                  setEditInitial(fullProduct);
+                  setModalOpen(true);
+                }}
+              />
             ))}
           </div>
         )}
@@ -329,19 +278,10 @@ const CategoriesPage = () => {
             />
 
             <div className="modal-actions">
-              <button
-                className="modal-btn ghost"
-                onClick={() => setShowAdd(false)}
-                type="button"
-              >
+              <button className="modal-btn ghost" onClick={() => setShowAdd(false)} type="button">
                 Cancel
               </button>
-              <button
-                className="modal-btn primary"
-                onClick={createCategory}
-                disabled={creating}
-                type="button"
-              >
+              <button className="modal-btn primary" onClick={createCategory} disabled={creating} type="button">
                 {creating ? "Creating..." : "Create"}
               </button>
             </div>
@@ -360,6 +300,4 @@ const CategoriesPage = () => {
       />
     </div>
   );
-};
-
-export default CategoriesPage;
+}

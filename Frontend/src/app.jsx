@@ -10,6 +10,8 @@ import ProductDetailsPage from "./components/pages/Products/ProductDetailsPage";
 import CategoriesPage from "./components/pages/category/CategoriesPage";
 import CartPage from "./components/pages/carts/CartPage";
 import PersonalizedGifts from "./components/pages/personalized/PersonalizedGifts";
+import AdminCartsPage from "./components/pages/Admin/AdminCartsPage";
+import FavoritesPage from "./components/pages/favorites/FavoritesPage";
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem("token");
@@ -23,7 +25,7 @@ export default function App() {
       <Navigation />
 
       <Routes>
-        {/* דף בית -> מוצרים */}
+        <Route path="/admin/carts" element={<AdminCartsPage />} />
 
         <Route path="/personal" element={<PersonalizedGifts />} />
 
@@ -43,6 +45,8 @@ export default function App() {
 
 
         <Route path="*" element={<Navigate to="/login" replace />} />
+
+        <Route path="/favorites" element={<FavoritesPage />} />
       </Routes>
     </>
   );

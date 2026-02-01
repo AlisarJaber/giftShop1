@@ -1,0 +1,73 @@
+.fav-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.fav-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.fav-title {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.fav-sub {
+  margin: 6px 0 0;
+  opacity: 0.75;
+  font-size: 14px;
+}
+
+.fav-back {
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.fav-back:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+}
+
+.fav-box {
+  padding: 28px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px dashed rgba(0,0,0,0.18);
+  text-align: center;
+}
+
+.fav-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1050px) {
+  .fav-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 750px) {
+  .fav-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .fav-grid { grid-template-columns: 1fr; }
+}
+.nav__icon,
+.nav__iconLink {
+  text-decoration: none;
+}
+.nav__icon:hover,
+.nav__iconLink:hover {
+  text-decoration: none;
+}
