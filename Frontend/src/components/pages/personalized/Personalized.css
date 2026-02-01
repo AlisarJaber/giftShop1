@@ -20,7 +20,7 @@
   padding:6px 12px;
   border-radius:999px;
   background:#f3e7e0;
-  color:#e0614f;
+  color:#c22303;
   font-weight:800;
   font-size:12px;
 }
@@ -64,7 +64,7 @@
   border-radius:999px;
   display:grid;
   place-items:center;
-  background:#e0614f;
+  background:#c22303;
   color:#fff;
   font-weight:900;
   font-size:12px;
@@ -100,7 +100,7 @@
 }
 
 .pg-tile.is-active{
-  border-color:#e0614f;
+  border-color:#c22303;
   box-shadow:0 12px 24px rgba(224,97,79,0.16);
 }
 
@@ -156,7 +156,7 @@
 }
 
 .pg-drop-text span{
-  color:#e0614f;
+  color:#c22303;
 }
 
 .pg-drop-hint{
@@ -179,7 +179,7 @@
   padding:13px 14px;
   font-weight:900;
   cursor:pointer;
-  background:#e0614f;
+  background:#c22303;
   color:#fff;
   box-shadow:0 10px 20px rgba(224, 97, 79, 0.22);
 }

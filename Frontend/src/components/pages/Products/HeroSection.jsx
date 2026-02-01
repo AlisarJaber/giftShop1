@@ -26,7 +26,7 @@ export default function HeroSection() {
         </p>
 
         <div className="hero-actions">
-          <button className="hero-btn hero-btn-secondary">
+          <button className="hero-btn hero-btn-secondary" onClick={()=> navigate("/personal")}>
             Customization
           </button>
           <button className="hero-btn hero-btn-primary" onClick={()=> navigate("/categories")}>
