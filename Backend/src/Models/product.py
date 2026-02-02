@@ -1,7 +1,10 @@
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from sqlmodel import SQLModel, Field
 from datetime import datetime
 from datetime import datetime, timezone
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column
+
 
 class Product(SQLModel, table=True):
     __tablename__ = "product"  
@@ -17,5 +20,10 @@ class Product(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     category_id: Optional[int] = Field(default=None, foreign_key="categories.id", index=True)
     is_custom_box: bool = Field(default=False)
+    box_items: Optional[List[Dict[str, Any]]] = Field(
+    default=None,
+    sa_column=Column(JSONB, nullable=True)
+)
+
 
     
