@@ -1,14 +1,12 @@
-from pydantic import BaseModel
+from sqlmodel import SQLModel
+from typing import Optional
 
-class SinCategoryBase(BaseModel):
+class SinCategoryCreate(SQLModel):
     name: str
+    image_url: Optional[str] = None
     is_active: bool = True
 
-class SinCategoryCreate(SinCategoryBase):
-    name: str
-
-class SinCategoryOut(SinCategoryBase):
-    id: int
-
-    class Config:
-        from_attributes = True
+class SinCategoryUpdate(SQLModel):
+    name: Optional[str] = None
+    image_url: Optional[str] = None
+    is_active: Optional[bool] = None
