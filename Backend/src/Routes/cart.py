@@ -7,6 +7,7 @@ from database import get_session
 from src.Models.user import User
 from src.Models.product import Product
 
+
 router = APIRouter(prefix="/carts", tags=["carts"])
 
 
@@ -52,6 +53,109 @@ def add_prod_to_cart(
 
     session.commit()
     return {"message": "Product added to cart"}
+
+
+# -----------------------------
+# NEW: ADD CUSTOM BOX AS ONE PRODUCT
+# -----------------------------
+@router.post("/custom-box/add")
+def add_custom_box_to_cart(
+    payload: dict,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    """
+    expected payload:
+    {
+      "name": "My Box",
+      "items": [
+        {"product_id": 5, "quantity": 2},
+        {"product_id": 12, "quantity": 1}
+      ]
+    }
+    """
+
+    items = payload.get("items", [])
+    name = payload.get("name") or "Custom Box"
+
+    if not items or not isinstance(items, list):
+        raise HTTPException(status_code=400, detail="items is required (list)")
+
+    # להביא מוצרים ולחשב מחיר כולל
+    ids = [it.get("product_id") for it in items]
+    if any(x is None for x in ids):
+        raise HTTPException(status_code=400, detail="each item must include product_id")
+
+    products = session.exec(
+        select(Product).where(
+            Product.id.in_(ids),
+            Product.is_active.is_(True),
+            Product.is_custom_box.is_(False),  # שלא יכניסו מארז בתוך מארז
+        )
+    ).all()
+
+    if len(products) != len(ids):
+        raise HTTPException(status_code=400, detail="one or more products not found/inactive")
+
+    pmap = {p.id: p for p in products}
+
+    total_price = 0
+    normalized_items = []
+
+    for it in items:
+        pid = int(it.get("product_id"))
+        qty = int(it.get("quantity", 0))
+
+        if qty <= 0:
+            raise HTTPException(status_code=400, detail="quantity must be > 0")
+
+        prod = pmap[pid]
+        price = int(prod.price) if prod.price is not None else 0
+        total_price += price * qty
+
+        normalized_items.append({"product_id": pid, "quantity": qty})
+
+    # ליצור מוצר חדש שהוא מארז
+    box_product = Product(
+        name=name,
+        description="Custom box",
+        price=total_price,
+        quantity=1,
+        badge="BOX",
+        image_url="",
+        is_active=True,
+        is_custom_box=True,
+        box_items=normalized_items,  # <-- JSONB בעמודה של product
+        category_id=2,  # אם אצלך חובה category_id אז תני קטגוריה קבועה של BOX
+    )
+
+    session.add(box_product)
+    session.commit()
+    session.refresh(box_product)
+
+    # להוסיף לעגלה "שורה אחת" של המארז
+    cart = get_or_create_open_cart(session, user.id)
+
+    cart_item = session.exec(
+        select(CartProduct).where(
+            CartProduct.cart_id == cart.id,
+            CartProduct.product_id == box_product.id,
+        )
+    ).first()
+
+    if cart_item:
+        cart_item.quantity += 1
+    else:
+        cart_item = CartProduct(
+            cart_id=cart.id,
+            product_id=box_product.id,
+            quantity=1,
+        )
+        session.add(cart_item)
+
+    session.commit()
+
+    return {"message": "Custom box added to cart", "box_product_id": box_product.id}
 
 
 @router.get("/")
@@ -153,6 +257,8 @@ def admin_list_all_carts(
                     "product_name": product.name if product else None,
                     "product_price": price if product else None,
                     "quantity": qty,
+                    "is_custom_box": bool(getattr(product, "is_custom_box", False)) if product else False,
+                    "box_items": getattr(product, "box_items", None) if product else None,
                 }
             )
 

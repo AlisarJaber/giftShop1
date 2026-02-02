@@ -24,49 +24,28 @@ export const getSingleProducts = async (categoryId) => {
 
 // --------- CREATE ---------
 export const createSingleCategory = async (payload) => {
-  // payload = { name, image_url?, is_active? }
-  const res = await axios.post(
-    `${API}/single-categories/`,
-    payload,
-    AXIOS_CONFIG
-  );
+  const res = await axios.post(`${API}/single-categories/`, payload, AXIOS_CONFIG);
   return res.data;
 };
 
-
 export const createSingleProduct = async (payload) => {
-  const res = await axios.post(
-    `${API}/single-products/`,
-    payload,
-    AXIOS_CONFIG
-  );
+  const res = await axios.post(`${API}/single-products/`, payload, AXIOS_CONFIG);
   return res.data;
 };
 
 // --------- UPDATE (EDIT) ---------
 export const updateSingleCategory = async (category_id, payload) => {
-  // payload = { name: "New Name" }
-  const res = await axios.put(
-    `${API}/single-categories/${category_id}`,
-    payload,
-    AXIOS_CONFIG
-  );
+  const res = await axios.put(`${API}/single-categories/${category_id}`, payload, AXIOS_CONFIG);
   return res.data;
 };
 
 export const updateSingleProduct = async (product_id, payload) => {
-  // payload = { name, price, description, image_url, category_id }
-  const res = await axios.put(
-    `${API}/single-products/${product_id}`,
-    payload,
-    AXIOS_CONFIG
-  );
+  const res = await axios.put(`${API}/single-products/${product_id}`, payload, AXIOS_CONFIG);
   return res.data;
 };
 
 // --------- DELETE ---------
 export const deleteSingleCategory = async (category_id) => {
-  // בדרך כלל 204 -> אין body
   await axios.delete(`${API}/single-categories/${category_id}`, AXIOS_CONFIG);
   return true;
 };
@@ -89,11 +68,24 @@ export const uploadImage = async (file) => {
     },
   });
 
-  // אם הבאקנד מחזיר { url: "..." }:
   if (res.data?.url) return res.data.url;
-
-  // אם הבאקנד מחזיר את ה-URL כמחרוזת:
   if (typeof res.data === "string") return res.data;
 
   throw new Error("Upload response format is not supported");
+};
+
+// --------- CUSTOM BOX -> CART ---------
+export const addCustomBoxToCart = async ({ name, items }) => {
+  const payload = {
+    name: name || "My Box",
+    items: (items || []).map((x) => ({
+      product_id: Number(x.product_id),
+      quantity: Number(x.quantity),
+    })),
+  };
+
+  console.log("SENDING CUSTOM BOX:", payload);
+
+  const res = await axios.post(`${API}/carts/custom-box/add`, payload, AXIOS_CONFIG);
+  return res.data;
 };
