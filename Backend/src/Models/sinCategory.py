@@ -7,6 +7,8 @@ class SinCategory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True, nullable=False, unique=True)
     is_active: bool = Field(default=True, nullable=False)
+    image_url: Optional[str] = None
+
 
     # optional relationship (works only if SinProduct has relationship back)
     products: List["SinProduct"] = Relationship(back_populates="category")
