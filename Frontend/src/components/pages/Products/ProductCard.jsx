@@ -6,6 +6,8 @@ import {
   getFavoriteIds,
   toggleFavorite,
 } from "../../../utils/productsApi";
+import toast from "react-hot-toast"; // ✅ הוספה
+import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
 
 export default function ProductCard({
   product,
@@ -37,19 +39,26 @@ export default function ProductCard({
     try {
       const res = await toggleFavorite(id);
       setFav(!!res.favorite);
+      const next = !!res.favorite;
+      setFav(next);
+
+      // ✅ הודעה קטנה רק כשיש שינוי (לא חובה אבל נחמד)
+      toast.success(next ? "Added to favorites" : "Removed from favorites");
     } catch (e2) {
-      alert(e2?.response?.data?.detail || "Favorite failed");
+      toast.error(getErrorText(e2, "Could not update favorites"));
     }
   };
 
   const handleDelete = async (e) => {
     e.stopPropagation();
     if (!confirm("Delete this product?")) return;
+
     try {
       await deleteProduct(id);
       onDeleted?.(id);
+      toast.success("Product deleted successfully");
     } catch (e2) {
-      alert(e2?.response?.data?.detail || "Delete failed");
+      toast.error(getErrorText(e2, "Delete failed"));
     }
   };
 
@@ -59,7 +68,7 @@ export default function ProductCard({
       const data = await getProductById(id);
       onEdit?.(data);
     } catch (e2) {
-      alert(e2?.response?.data?.detail || "Failed loading product");
+      toast.error(getErrorText(e2, "Failed to load product"));
     }
   };
 

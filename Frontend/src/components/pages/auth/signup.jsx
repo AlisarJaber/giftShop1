@@ -2,6 +2,8 @@ import { useState } from "react";
 import "../../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../../../utils/http";
+import { toast } from "react-hot-toast"; // ✅ הוספה
+import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -15,7 +17,12 @@ const Signup = () => {
     event.preventDefault();
 
     try {
-      const res = await http.post("/auth/signup", { first_name, last_name, email, password });
+      const res = await http.post("/auth/signup", {
+        first_name,
+        last_name,
+        email,
+        password,
+      });
 
       if (res?.data?.access_token) {
         localStorage.setItem("token", res.data.access_token);
@@ -25,9 +32,14 @@ const Signup = () => {
       }
 
       window.dispatchEvent(new Event("auth-change"));
+
+      toast.success("Account created successfully 🎉");
+
       navigate("/products", { replace: true });
     } catch (err) {
-      alert(err?.response?.data?.detail || "Signup failed");
+      toast.error(
+        getErrorText(err, "Signup failed. Please try again.")
+      );
     }
   };
 
@@ -40,11 +52,17 @@ const Signup = () => {
         </div>
 
         <div className="welcome">welcome</div>
-        <div className="subtitle">To enter the store you need to signup</div>
+        <div className="subtitle">
+          To enter the store you need to sign up
+        </div>
 
         <div className="auth-tabs">
-          <Link to="/signup" className="auth-tab active">Sign up</Link>
-          <Link to="/login" className="auth-tab">Login</Link>
+          <Link to="/signup" className="auth-tab active">
+            Sign up
+          </Link>
+          <Link to="/login" className="auth-tab">
+            Login
+          </Link>
         </div>
 
         <form className="auth-form" onSubmit={sendData}>
@@ -54,7 +72,7 @@ const Signup = () => {
               <input
                 value={first_name}
                 onChange={(e) => setFirst_name(e.target.value)}
-                placeholder="first name"
+                placeholder="First name"
                 required
               />
             </div>
@@ -66,7 +84,7 @@ const Signup = () => {
               <input
                 value={last_name}
                 onChange={(e) => setLast_name(e.target.value)}
-                placeholder="last name"
+                placeholder="Last name"
                 required
               />
             </div>
@@ -97,7 +115,9 @@ const Signup = () => {
             </div>
           </div>
 
-          <button className="auth-btn" type="submit">Submit</button>
+          <button className="auth-btn" type="submit">
+            Submit
+          </button>
         </form>
       </div>
     </div>

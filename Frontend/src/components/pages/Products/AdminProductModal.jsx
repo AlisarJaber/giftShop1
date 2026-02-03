@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCategories } from "../../../utils/categoriesApi";
+import toast from "react-hot-toast"; // ✅ הוספה
+import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
 
 export default function AdminProductModal({ open, onClose, initial, onSubmit }) {
   const [categories, setCategories] = useState([]);
@@ -8,7 +10,7 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
   const [form, setForm] = useState({
     name: "",
     price: 0,
-    quantity: 0, 
+    quantity: 0,
     badge: "",
     image_url: "",
     description: "",
@@ -21,7 +23,10 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
     setCatError("");
     getCategories()
       .then((data) => setCategories(Array.isArray(data) ? data : []))
-      .catch(() => setCatError("Failed to load categories"));
+      .catch((err) => {
+        setCatError("Failed to load categories");
+        toast.error(getErrorText(err, "Failed to load categories"));
+      });
   }, [open]);
 
   useEffect(() => {
@@ -57,17 +62,54 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
   const submit = async (e) => {
     e.preventDefault();
 
+    // ✅ ולידציות פרונט מינימליות (לא מוחק כלום, רק בודק לפני שליחה)
+    const name = form.name.trim();
+    const priceNum = Number(form.price);
+    const qtyNum = Number(form.quantity || 0);
+    const categoryId = form.category_id ? Number(form.category_id) : null;
+
+    if (!name) {
+      toast.error("Please enter a product name.");
+      return;
+    }
+
+    if (!categoryId) {
+      toast.error("Please select a category.");
+      return;
+    }
+
+    if (!Number.isFinite(priceNum) || priceNum <= 0) {
+      toast.error("Price must be greater than 0.");
+      return;
+    }
+
+    if (!Number.isFinite(qtyNum) || qtyNum < 0) {
+      toast.error("Quantity must be 0 or more.");
+      return;
+    }
+
+    const imageUrl = form.image_url.trim();
+    if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
+      toast.error("Image URL must start with http:// or https://");
+      return;
+    }
+
     const payload = {
-      name: form.name.trim(),
-      price: Number(form.price),
-      quantity: Math.max(0, Number(form.quantity || 0)),
+      name,
+      price: priceNum,
+      quantity: Math.max(0, qtyNum),
       badge: form.badge.trim() || null,
-      image_url: form.image_url.trim() || null,
+      image_url: imageUrl || null,
       description: form.description.trim() || null,
-      category_id: form.category_id ? Number(form.category_id) : null,
+      category_id: categoryId,
     };
 
-    await onSubmit(payload);
+    try {
+      await onSubmit(payload);
+      toast.success(initial ? "Product updated successfully ✅" : "Product created successfully 🎉");
+    } catch (err) {
+      toast.error(getErrorText(err, "Save failed. Please try again."));
+    }
   };
 
   return (
@@ -129,10 +171,16 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
           />
 
           <label>Badge (optional)</label>
-          <input value={form.badge} onChange={(e) => set("badge", e.target.value)} />
+          <input
+            value={form.badge}
+            onChange={(e) => set("badge", e.target.value)}
+          />
 
           <label>Image URL (optional)</label>
-          <input value={form.image_url} onChange={(e) => set("image_url", e.target.value)} />
+          <input
+            value={form.image_url}
+            onChange={(e) => set("image_url", e.target.value)}
+          />
 
           <label>Description (optional)</label>
           <textarea

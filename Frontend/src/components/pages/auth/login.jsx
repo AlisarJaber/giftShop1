@@ -2,6 +2,8 @@ import { useState } from "react";
 import "../../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../../../utils/http";
+import toast from "react-hot-toast"; // ✅ תיקון: בלי {}
+import { getErrorText } from "../../../utils/toastText"; // ✅ נשאר
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,9 +20,11 @@ const Login = () => {
       localStorage.setItem("user", JSON.stringify(res.data.user));
       window.dispatchEvent(new Event("auth-change"));
 
+      toast.success("Logged in successfully 👋"); // ✅ הוספה
+
       navigate("/products", { replace: true });
     } catch (err) {
-      alert(err?.response?.data?.detail || err?.message || "Login failed");
+      toast.error(getErrorText(err, "Login failed")); // ✅ תיקון קריסה
     }
   };
 
@@ -36,8 +40,12 @@ const Login = () => {
         <div className="subtitle">To enter the store you need to log in</div>
 
         <div className="auth-tabs">
-          <Link to="/signup" className="auth-tab">Sign up</Link>
-          <Link to="/login" className="auth-tab active">Login</Link>
+          <Link to="/signup" className="auth-tab">
+            Sign up
+          </Link>
+          <Link to="/login" className="auth-tab active">
+            Login
+          </Link>
         </div>
 
         <form className="auth-form" onSubmit={sendData}>
@@ -64,7 +72,9 @@ const Login = () => {
             </div>
           </div>
 
-          <button className="auth-btn" type="submit">Submit</button>
+          <button className="auth-btn" type="submit">
+            Submit
+          </button>
         </form>
       </div>
     </div>

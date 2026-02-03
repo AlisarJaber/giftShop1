@@ -7,6 +7,8 @@ import AdminProductModal from "../Products/AdminProductModal";
 import ProductCard from "../Products/ProductCard";
 import { createProduct, updateProduct } from "../../../utils/productsApi";
 import { onInventoryUpdate } from "../../../utils/inventoryBus";
+import toast from "react-hot-toast"; // ✅ הוספה
+import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
 
 import {
   Home,
@@ -107,7 +109,7 @@ export default function CategoriesPage() {
       setCategories(catRes.data || []);
       setProducts(prodRes.data || []);
     } catch (e) {
-      alert("Failed to load categories/products");
+      toast.error(getErrorText(e, "Failed to load categories/products"));
     } finally {
       setLoading(false);
     }
@@ -211,7 +213,16 @@ export default function CategoriesPage() {
 
   const createCategory = async () => {
     const name = newName.trim();
-    if (!name) return;
+
+    // ✅ ולידציה מינימלית
+    if (!name) {
+      toast.error("Please enter a category name.");
+      return;
+    }
+    if (name.length < 2) {
+      toast.error("Category name is too short.");
+      return;
+    }
 
     setCreating(true);
     try {
@@ -224,8 +235,10 @@ export default function CategoriesPage() {
       setCategories((prev) => [res.data, ...prev]);
       setNewName("");
       setShowAdd(false);
+
+      toast.success("Category created successfully ✅");
     } catch (e) {
-      alert(e?.response?.data?.detail || "Failed to create category");
+      toast.error(getErrorText(e, "Failed to create category"));
     } finally {
       setCreating(false);
     }
@@ -251,7 +264,7 @@ export default function CategoriesPage() {
       setModalOpen(false);
       setEditInitial(null);
     } catch (e) {
-      alert(e?.response?.data?.detail || "Save failed");
+      toast.error(getErrorText(e, "Save failed"));
     }
   };
 

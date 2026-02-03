@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import "./personalized.css";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { getErrorText } from "../../../utils/toastText";
+
 import {
   getSingleCategories,
   getSingleProducts,
@@ -17,15 +21,17 @@ import SelectionSummary from "./SelectionSummary";
 import CategoryModal from "./CategoryModal";
 import ProductModal from "./ProductModal";
 
+const API = "http://localhost:8000";
+const APIKEY = "SEACRET1234567";
+
+const AXIOS_CFG = {
+  withCredentials: true,
+  headers: { apiKey: APIKEY },
+};
+
 export default function PersonalizedGifts() {
-  // ✅ admin gate from localStorage (kept updated by Navigation)
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    user = null;
-  }
-  const isAdmin = !!user?.is_admin;
+  // ✅ Admin gate as STATE (updates when auth-change fires)
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [categories, setCategories] = useState([]);
   const [activeCat, setActiveCat] = useState(null);
@@ -44,37 +50,71 @@ export default function PersonalizedGifts() {
     data: null,
   });
 
-  useEffect(() => {
-    loadCategories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // ✅ keep admin in sync with localStorage changes (login/logout)
+  const syncAdminFromStorage = useCallback(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("user") || "null");
+      setIsAdmin(!!u?.is_admin);
+    } catch {
+      setIsAdmin(false);
+    }
   }, []);
 
   useEffect(() => {
+    syncAdminFromStorage();
+    const onAuthChange = () => syncAdminFromStorage();
+    window.addEventListener("auth-change", onAuthChange);
+    return () => window.removeEventListener("auth-change", onAuthChange);
+  }, [syncAdminFromStorage]);
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const cats = await getSingleCategories();
+      const active = (cats || []).filter((c) => c.is_active !== false);
+      setCategories(active);
+
+      // keep activeCat valid
+      setActiveCat((prev) => {
+        if (prev?.id && active.some((c) => c.id === prev.id)) return prev;
+        return active.length ? active[0] : null;
+      });
+    } catch (e) {
+      toast.error(getErrorText(e, "Failed to load categories"));
+    }
+  }, []);
+
+  const loadProducts = useCallback(async (catId) => {
+    try {
+      setLoadingProducts(true);
+      const rows = await getSingleProducts(catId);
+      setProducts(rows || []);
+    } catch (e) {
+      toast.error(getErrorText(e, "Failed to load products"));
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
     if (activeCat?.id) loadProducts(activeCat.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCat?.id]);
-
-  const loadCategories = async () => {
-    const cats = await getSingleCategories();
-    const active = cats.filter((c) => c.is_active !== false);
-    setCategories(active);
-    if (!activeCat && active.length) setActiveCat(active[0]);
-  };
-
-  const loadProducts = async (catId) => {
-    setLoadingProducts(true);
-    const rows = await getSingleProducts(catId);
-    setProducts(rows);
-    setLoadingProducts(false);
-  };
+  }, [activeCat?.id, loadProducts]);
 
   const togglePick = (product) => {
-    const catId = activeCat.id;
+    const catId = activeCat?.id;
+    if (!catId) return;
+
     setSelections((prev) => {
       const cur = prev[catId] || [];
       const exists = cur.some((p) => p.id === product.id);
       if (exists) return { ...prev, [catId]: cur.filter((p) => p.id !== product.id) };
-      if (cur.length >= 2) return prev;
+      if (cur.length >= 2) {
+        toast.error("You can select up to 2 items per category");
+        return prev;
+      }
       return { ...prev, [catId]: [...cur, product] };
     });
   };
@@ -84,20 +124,69 @@ export default function PersonalizedGifts() {
     [selections]
   );
 
-  const handleAddToCart = () => {
-    const payload = {
-      type: "custom_box",
-      items: Object.entries(selections).map(([catId, items]) => ({
-        category_id: Number(catId),
-        products: items.map((p) => ({ product_id: p.id, price: p.price })),
-      })),
-      total,
-    };
-    console.log("ADD CUSTOM BOX TO CART:", payload);
-    alert("Custom gift box added to cart (check console)");
+  // ✅ send correct payload to backend (/carts/custom-box/add)
+  const handleAddToCart = async () => {
+    try {
+      const flat = Object.values(selections).flat();
+      if (!flat.length) {
+        toast.error("Please select at least one item to create a gift box");
+        return;
+      }
+
+      const items = flat.map((p) => ({
+        product_id: Number(p.id),
+        quantity: 1,
+      }));
+
+      const body = {
+        name: "My Box",
+        items,
+      };
+
+      await axios.post(`${API}/carts/custom-box/add`, body, AXIOS_CFG);
+
+      toast.success("Gift box added to cart successfully");
+      setSelections({});
+    } catch (e) {
+      toast.error(getErrorText(e, "Failed to add gift box to cart"));
+    }
   };
 
   const pickedCount = activeCat?.id ? (selections[activeCat.id] || []).length : 0;
+
+  // ✅ IMPORTANT:
+  // Always pass functions to grids to avoid undefined crashes / silent failures.
+  const safeEditCategory = (c) => {
+    if (!isAdmin) return;
+    setCatModal({ open: true, mode: "edit", data: c });
+  };
+
+  const safeDeleteCategory = async (id) => {
+    if (!isAdmin) return;
+    try {
+      await deleteSingleCategory(id);
+      toast.success("Category deleted");
+      await loadCategories();
+    } catch (e) {
+      toast.error(getErrorText(e, "Failed to delete category"));
+    }
+  };
+
+  const safeEditProduct = (p) => {
+    if (!isAdmin) return;
+    setProdModal({ open: true, mode: "edit", data: p });
+  };
+
+  const safeDeleteProduct = async (id) => {
+    if (!isAdmin) return;
+    try {
+      await deleteSingleProduct(id);
+      toast.success("Product deleted");
+      if (activeCat?.id) await loadProducts(activeCat.id);
+    } catch (e) {
+      toast.error(getErrorText(e, "Failed to delete product"));
+    }
+  };
 
   return (
     <div className="pg2-page">
@@ -107,14 +196,16 @@ export default function PersonalizedGifts() {
           {isAdmin && (
             <div className="pg2-adminCard">
               <button
+                type="button"
                 className="pg2-adminBtn"
-                onClick={() => setCatModal({ open: true, mode: "create" })}
+                onClick={() => setCatModal({ open: true, mode: "create", data: null })}
               >
                 + Add Category
               </button>
               <button
+                type="button"
                 className="pg2-adminBtn"
-                onClick={() => setProdModal({ open: true, mode: "create" })}
+                onClick={() => setProdModal({ open: true, mode: "create", data: null })}
               >
                 + Add Product
               </button>
@@ -146,15 +237,8 @@ export default function PersonalizedGifts() {
               selections={selections}
               onSelect={setActiveCat}
               isAdmin={isAdmin}
-              onEdit={isAdmin ? (c) => setCatModal({ open: true, mode: "edit", data: c }) : undefined}
-              onDelete={
-                isAdmin
-                  ? async (id) => {
-                      await deleteSingleCategory(id);
-                      loadCategories();
-                    }
-                  : undefined
-              }
+              onEdit={safeEditCategory}
+              onDelete={safeDeleteCategory}
             />
           </div>
 
@@ -182,15 +266,8 @@ export default function PersonalizedGifts() {
                 selections={selections}
                 onToggle={togglePick}
                 isAdmin={isAdmin}
-                onEdit={isAdmin ? (p) => setProdModal({ open: true, mode: "edit", data: p }) : undefined}
-                onDelete={
-                  isAdmin
-                    ? async (id) => {
-                        await deleteSingleProduct(id);
-                        loadProducts(activeCat.id);
-                      }
-                    : undefined
-                }
+                onEdit={safeEditProduct}
+                onDelete={safeDeleteProduct}
               />
             )}
           </div>
@@ -208,13 +285,21 @@ export default function PersonalizedGifts() {
       {isAdmin && (
         <CategoryModal
           modal={catModal}
-          onClose={() => setCatModal({ open: false })}
+          onClose={() => setCatModal({ open: false, mode: "create", data: null })}
           onSave={async (payload) => {
-            catModal.mode === "create"
-              ? await createSingleCategory(payload)
-              : await updateSingleCategory(catModal.data.id, payload);
-            setCatModal({ open: false });
-            loadCategories();
+            try {
+              if (catModal.mode === "create") {
+                await createSingleCategory(payload);
+                toast.success("Category created");
+              } else {
+                await updateSingleCategory(catModal.data.id, payload);
+                toast.success("Category updated");
+              }
+              setCatModal({ open: false, mode: "create", data: null });
+              await loadCategories();
+            } catch (e) {
+              toast.error(getErrorText(e, "Failed to save category"));
+            }
           }}
         />
       )}
@@ -223,13 +308,21 @@ export default function PersonalizedGifts() {
         <ProductModal
           modal={prodModal}
           categories={categories}
-          onClose={() => setProdModal({ open: false })}
+          onClose={() => setProdModal({ open: false, mode: "create", data: null })}
           onSave={async (payload) => {
-            prodModal.mode === "create"
-              ? await createSingleProduct(payload)
-              : await updateSingleProduct(prodModal.data.id, payload);
-            setProdModal({ open: false });
-            loadProducts(activeCat.id);
+            try {
+              if (prodModal.mode === "create") {
+                await createSingleProduct(payload);
+                toast.success("Product created");
+              } else {
+                await updateSingleProduct(prodModal.data.id, payload);
+                toast.success("Product updated");
+              }
+              setProdModal({ open: false, mode: "create", data: null });
+              if (activeCat?.id) await loadProducts(activeCat.id);
+            } catch (e) {
+              toast.error(getErrorText(e, "Failed to save product"));
+            }
           }}
         />
       )}
