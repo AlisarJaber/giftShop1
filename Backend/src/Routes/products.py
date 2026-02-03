@@ -18,22 +18,21 @@ from src.Services.product_service import (
 )
 from src.Utils.deps import get_current_user, require_admin
 
-# ✅ NEW imports
 from pydantic import BaseModel
 from typing import List as TList
+
 from src.Models.product import Product
 from src.Models.sinProduct import SinProduct
-from src.Models.cart import Cart  # יש לך כזה כבר
-# ❗ שימי לב: השורה הבאה תלויה בשם המודל שלך לטבלת cart_product
-# אם אצלך זה לא CartProduct — החליפי לשם הנכון
-from src.Models.cart import CartProduct  # <-- אם השם שונה אצלך, תגידי לי
+from src.Models.cart import Cart
+from src.Models.cart import CartProduct
+
+from src.socketio_server import emit_inventory
 
 router = APIRouter(prefix="/products", tags=["products"])
 
 
-# ✅ NEW schema (אפשר גם לשים בקובץ Schemas נפרד, אבל שמתי פה כדי שלא תסתבכי)
 class CustomBoxCreate(BaseModel):
-    items: TList[int]  # ids של single_products
+    items: TList[int] 
 
 
 @router.get("", response_model=List[ProductCard])
@@ -57,17 +56,23 @@ def product_details(
 
 
 @router.post("", response_model=ProductDetails, status_code=status.HTTP_201_CREATED)
-def add_product(
+async def add_product(
     payload: ProductCreate,
     session: Session = Depends(get_session),
     admin=Depends(require_admin)
 ):
-    return create_product(session, payload)
+    created = create_product(session, payload)
+
+    await emit_inventory("item_added", {
+        "product_id": created.id,
+        "by_admin_id": admin.id
+    })
+
+    return created
 
 
-# ✅ NEW: create custom box product + add to cart as one item
 @router.post("/custom-box", status_code=status.HTTP_201_CREATED)
-def create_custom_box_and_add_to_cart(
+async def create_custom_box_and_add_to_cart(
     body: CustomBoxCreate,
     session: Session = Depends(get_session),
     user=Depends(get_current_user)
@@ -75,7 +80,6 @@ def create_custom_box_and_add_to_cart(
     if not body.items or len(body.items) == 0:
         raise HTTPException(status_code=400, detail="No items selected")
 
-    # להביא את הפריטים שנבחרו מהטבלה single_products
     sin_products = session.exec(
         select(SinProduct).where(SinProduct.id.in_(body.items))
     ).all()
@@ -86,21 +90,19 @@ def create_custom_box_and_add_to_cart(
     total = sum(int(p.price or 0) for p in sin_products)
     names = ", ".join([p.name for p in sin_products])
 
-    # ליצור מוצר חדש בטבלת products (כמו מארז רגיל)
     custom_product = Product(
         name="Custom Gift Box",
         description=f"Includes: {names}",
         price=total,
         image_url="https://via.placeholder.com/800x500?text=Custom+Gift+Box",
         is_active=True,
-        is_custom_box=True,  # ✅ חשוב כדי שלא יופיע בקטלוג
+        is_custom_box=True,  
         category_id=None
     )
     session.add(custom_product)
     session.commit()
     session.refresh(custom_product)
 
-    # להביא/ליצור עגלה למשתמש
     cart = session.exec(select(Cart).where(Cart.user_id == user.id)).first()
     if not cart:
         cart = Cart(user_id=user.id)
@@ -108,7 +110,6 @@ def create_custom_box_and_add_to_cart(
         session.commit()
         session.refresh(cart)
 
-    # ✅ להוסיף לעגלה כ"שורה אחת" (cart_product)
     row = session.exec(
         select(CartProduct).where(
             CartProduct.cart_id == cart.id,
@@ -128,7 +129,7 @@ def create_custom_box_and_add_to_cart(
 
 
 @router.put("/{product_id}", response_model=ProductDetails)
-def edit_product(
+async def edit_product(
     product_id: int,
     payload: ProductUpdate,
     session: Session = Depends(get_session),
@@ -138,11 +139,18 @@ def edit_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    return update_product(session, product, payload.dict(exclude_unset=True))
+    updated = update_product(session, product, payload.dict(exclude_unset=True))
+
+    await emit_inventory("inventory_update", {
+        "product_id": product_id,
+        "by_admin_id": admin.id
+    })
+
+    return updated
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_product(
+async def delete_product(
     product_id: int,
     session: Session = Depends(get_session),
     admin=Depends(require_admin)
@@ -152,3 +160,8 @@ def delete_product(
         raise HTTPException(status_code=404, detail="Product not found")
 
     soft_delete_product(session, product)
+
+    await emit_inventory("item_removed", {
+        "product_id": product_id,
+        "by_admin_id": admin.id
+    })
