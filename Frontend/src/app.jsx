@@ -13,6 +13,8 @@ import PersonalizedGifts from "./components/pages/personalized/PersonalizedGifts
 import AdminCartsPage from "./components/pages/Admin/AdminCartsPage";
 import FavoritesPage from "./components/pages/favorites/FavoritesPage";
 
+import SocketBridge from "./components/SocketBridge";
+
 function RequireAuth({ children }) {
   const token = localStorage.getItem("token");
   if (!token) return <Navigate to="/login" replace />;
@@ -22,31 +24,28 @@ function RequireAuth({ children }) {
 export default function App() {
   return (
     <>
+      <SocketBridge />
+
       <Navigation />
 
       <Routes>
         <Route path="/admin/carts" element={<AdminCartsPage />} />
-
         <Route path="/personal" element={<PersonalizedGifts />} />
-
         <Route path="/" element={<Navigate to="/products" replace />} />
-
         <Route path="/signup" element={<Signup />} />
-
         <Route path="/login" element={<Login />} />
 
-        <Route path="/products" element={ <RequireAuth> <ProductsPage /> </RequireAuth>}/>
+        <Route path="/products" element={<RequireAuth> <ProductsPage /></RequireAuth>}/>
 
         <Route path="/products/:id" element={ <RequireAuth> <ProductDetailsPage /> </RequireAuth>}/>
 
         <Route path="/categories" element={ <RequireAuth> <CategoriesPage /> </RequireAuth>}/>
 
-        <Route path="/cart" element={ <RequireAuth> <CartPage /> </RequireAuth>}/>
-
-
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/cart" element={<RequireAuth> <CartPage /> </RequireAuth>}/>
 
         <Route path="/favorites" element={<FavoritesPage />} />
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </>
   );

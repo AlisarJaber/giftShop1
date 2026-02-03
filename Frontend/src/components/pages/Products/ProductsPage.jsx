@@ -5,7 +5,7 @@ import HeroSection from "./HeroSection";
 import AdminProductModal from "./AdminProductModal";
 import { getProducts, createProduct, updateProduct } from "../../../utils/productsApi";
 import "./products.css";
-import { connectSocket, disconnectSocket } from "../../../utils/socket";
+import { onInventoryUpdate } from "../../../utils/inventoryBus";
 
 const RECOMMENDED_BADGES = new Set(["recommended", "popular", "featured"]);
 
@@ -58,16 +58,8 @@ export default function ProductsPage() {
 
   useEffect(() => {
     if (!user) return;
-
-    connectSocket((data) => {
-      const evt = data?.event;
-
-      if (evt === "item_added" || evt === "item_removed" || evt === "inventory_update") {
-        load();
-      }
-    });
-
-    return () => disconnectSocket();
+    const off = onInventoryUpdate(() => load());
+    return off;
   }, [user, load]);
 
   const search = useMemo(() => {
@@ -134,7 +126,9 @@ export default function ProductsPage() {
       <div className="products-page">
         <div className="products-header">
           <div>
-            <h1 className="products-title">{search ? "Search results" : "Recommended products"}</h1>
+            <h1 className="products-title">
+              {search ? "Search results" : "Recommended products"}
+            </h1>
             <p className="products-subtitle">
               {search ? "Results by name / badge" : "Our most popular gifts"}
             </p>
