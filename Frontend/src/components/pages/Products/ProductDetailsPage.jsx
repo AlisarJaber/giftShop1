@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getProductById } from "../../../utils/productsApi";
 import "./productDetails.css";
 import { addToCart } from "../../../utils/cartApi.js";
+import toast from "react-hot-toast"; // ✅ הוספה
+import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -28,6 +30,10 @@ export default function ProductDetailsPage() {
     setLoading(true);
     getProductById(id)
       .then(setProduct)
+      .catch((err) => {
+        toast.error(getErrorText(err, "Failed to load product"));
+        setProduct(null);
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -38,14 +44,12 @@ export default function ProductDetailsPage() {
     try {
       setAdding(true);
       await addToCart(product.id, 1);
-      alert("Added to cart!");
+
+      toast.success("Item added to your cart");
+
       await reload();
     } catch (error) {
-      const msg =
-        error?.response?.data?.detail ||
-        error?.response?.data?.message ||
-        "Failed to add to cart";
-      alert(msg);
+      toast.error(getErrorText(error, "Failed to add item to cart"));
     } finally {
       setAdding(false);
     }
@@ -115,8 +119,7 @@ export default function ProductDetailsPage() {
           </div>
 
           {isAdmin ? (
-            <div style={{ marginTop: 14, fontSize: 13, opacity: 0.8 }}>
-            </div>
+            <div style={{ marginTop: 14, fontSize: 13, opacity: 0.8 }}></div>
           ) : null}
         </div>
       </div>

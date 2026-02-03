@@ -1,0 +1,41 @@
+/* react-hot-toast (GiftShop) */
+
+.gs-toast {
+  font-size: 16px !important;
+  padding: 14px 18px !important;
+  border-radius: 12px !important;
+
+  background: #ffffff !important;
+  color: #1f2937 !important;
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+
+  min-width: 320px !important;
+  max-width: 92vw !important;
+
+  text-align: center !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+
+  /* קצת יותר "נוכחות" */
+  font-weight: 700 !important;
+  letter-spacing: 0.2px !important;
+}
+
+.gs-toast--success {
+  border-left: 6px solid #16a34a !important;
+}
+
+.gs-toast--error {
+  border-left: 6px solid #dc2626 !important;
+}
+
+/* אופציונלי: להגדיל קצת את האייקון */
+.gs-toast [data-icon] {
+  transform: scale(1.1);
+}
+
+.gs-toast--success {
+  border-left: 6px solid #16a34a !important;
+  background: #ecfdf5 !important; /* ירוק בהיר */
+  color: #065f46 !important;      /* טקסט ירוק כהה */
+}

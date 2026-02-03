@@ -15,6 +15,11 @@ import FavoritesPage from "./components/pages/favorites/FavoritesPage";
 
 import SocketBridge from "./components/SocketBridge";
 
+import { Toaster } from "react-hot-toast";
+
+import "./assets/toast.css";
+
+
 function RequireAuth({ children }) {
   const token = localStorage.getItem("token");
   if (!token) return <Navigate to="/login" replace />;
@@ -24,6 +29,7 @@ function RequireAuth({ children }) {
 export default function App() {
   return (
     <>
+
       <SocketBridge />
 
       <Navigation />
@@ -35,18 +41,30 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 
-        <Route path="/products" element={<RequireAuth> <ProductsPage /></RequireAuth>}/>
+        <Route path="/products" element={<RequireAuth> <ProductsPage /></RequireAuth>} />
 
-        <Route path="/products/:id" element={ <RequireAuth> <ProductDetailsPage /> </RequireAuth>}/>
+        <Route path="/products/:id" element={<RequireAuth> <ProductDetailsPage /> </RequireAuth>} />
 
-        <Route path="/categories" element={ <RequireAuth> <CategoriesPage /> </RequireAuth>}/>
+        <Route path="/categories" element={<RequireAuth> <CategoriesPage /> </RequireAuth>} />
 
-        <Route path="/cart" element={<RequireAuth> <CartPage /> </RequireAuth>}/>
+        <Route path="/cart" element={<RequireAuth> <CartPage /> </RequireAuth>} />
 
         <Route path="/favorites" element={<FavoritesPage />} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          className: "gs-toast",
+          duration: 3500,
+          success: { className: "gs-toast gs-toast--success" },
+          error: { className: "gs-toast gs-toast--error" },
+        }}
+      />
+
+
     </>
   );
 }
