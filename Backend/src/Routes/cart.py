@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
-from src.Models.cart import Cart, CartProduct
-from src.Schemas.cart import AddToCartRequest
-from src.Utils.deps import get_current_user, require_admin
+
 from database import get_session
+from src.Utils.deps import get_current_user, require_admin
+
+from src.Models.cart import Cart, CartProduct
 from src.Models.user import User
 from src.Models.product import Product
+from src.Models.sinProduct import SinProduct
 
+from src.Schemas.cart import AddToCartRequest
+from src.Schemas.custom_box import CustomBoxCreate
 
 router = APIRouter(prefix="/carts", tags=["carts"])
 
@@ -26,6 +30,96 @@ def get_or_create_open_cart(session: Session, user_id: int) -> Cart:
     return cart
 
 
+# ✅ GET CART (זה מה שחסר לך - בגלל זה היה 404)
+@router.get("/")
+def get_my_cart(
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    cart = get_or_create_open_cart(session, user.id)
+    cart_items = session.exec(
+        select(CartProduct).where(CartProduct.cart_id == cart.id)
+    ).all()
+    return cart_items
+
+
+# ✅ ADD CUSTOM BOX AS ONE PRODUCT
+@router.post("/custom-box/add", status_code=status.HTTP_201_CREATED)
+def create_custom_box_and_add_to_cart(
+    body: CustomBoxCreate,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    if not body.items or len(body.items) == 0:
+        raise HTTPException(status_code=400, detail="No items selected")
+
+    qty_by_id = {}
+    for it in body.items:
+        pid = int(it.product_id)
+        qty = int(it.quantity or 1)
+
+        if pid <= 0 or qty <= 0:
+            raise HTTPException(status_code=400, detail="Invalid product_id/quantity")
+
+        qty_by_id[pid] = qty_by_id.get(pid, 0) + qty
+
+    sin_ids = list(qty_by_id.keys())
+
+    sin_products = session.exec(
+        select(SinProduct).where(
+            SinProduct.id.in_(sin_ids),
+            SinProduct.is_active == True,   # אצלך כבר הוספת
+        )
+    ).all()
+
+    if len(sin_products) != len(sin_ids):
+        raise HTTPException(status_code=400, detail="one or more products not found/inactive")
+
+    total = 0
+    parts = []
+    for p in sin_products:
+        q = qty_by_id[p.id]
+        price = int(p.price or 0)
+        total += price * q
+        parts.append(f"{p.name} x{q}")
+
+    name = body.name or "My Box"
+    names = ", ".join(parts)
+
+    # ליצור מוצר חדש בטבלת products (מארז)
+    custom_product = Product(
+        name=name,
+        description=f"Custom box includes: {names}",
+        price=total,
+        image_url="https://via.placeholder.com/800x500?text=Custom+Gift+Box",
+        is_active=True,
+        is_custom_box=True,
+        category_id=None
+    )
+    session.add(custom_product)
+    session.commit()
+    session.refresh(custom_product)
+
+    cart = get_or_create_open_cart(session, user.id)
+
+    row = session.exec(
+        select(CartProduct).where(
+            CartProduct.cart_id == cart.id,
+            CartProduct.product_id == custom_product.id
+        )
+    ).first()
+
+    if row:
+        row.quantity += 1
+    else:
+        row = CartProduct(cart_id=cart.id, product_id=custom_product.id, quantity=1)
+        session.add(row)
+
+    session.commit()
+    return {"added_product_id": custom_product.id, "total": total}
+
+
+# ✅ ADD REGULAR PRODUCT
 @router.post("/add")
 def add_prod_to_cart(
     cart_prod_request: AddToCartRequest,
@@ -55,123 +149,7 @@ def add_prod_to_cart(
     return {"message": "Product added to cart"}
 
 
-# -----------------------------
-# NEW: ADD CUSTOM BOX AS ONE PRODUCT
-# -----------------------------
-@router.post("/custom-box/add")
-def add_custom_box_to_cart(
-    payload: dict,
-    session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
-):
-    """
-    expected payload:
-    {
-      "name": "My Box",
-      "items": [
-        {"product_id": 5, "quantity": 2},
-        {"product_id": 12, "quantity": 1}
-      ]
-    }
-    """
-
-    items = payload.get("items", [])
-    name = payload.get("name") or "Custom Box"
-
-    if not items or not isinstance(items, list):
-        raise HTTPException(status_code=400, detail="items is required (list)")
-
-    # להביא מוצרים ולחשב מחיר כולל
-    ids = [it.get("product_id") for it in items]
-    if any(x is None for x in ids):
-        raise HTTPException(status_code=400, detail="each item must include product_id")
-
-    products = session.exec(
-        select(Product).where(
-            Product.id.in_(ids),
-            Product.is_active.is_(True),
-            Product.is_custom_box.is_(False),  # שלא יכניסו מארז בתוך מארז
-        )
-    ).all()
-
-    if len(products) != len(ids):
-        raise HTTPException(status_code=400, detail="one or more products not found/inactive")
-
-    pmap = {p.id: p for p in products}
-
-    total_price = 0
-    normalized_items = []
-
-    for it in items:
-        pid = int(it.get("product_id"))
-        qty = int(it.get("quantity", 0))
-
-        if qty <= 0:
-            raise HTTPException(status_code=400, detail="quantity must be > 0")
-
-        prod = pmap[pid]
-        price = int(prod.price) if prod.price is not None else 0
-        total_price += price * qty
-
-        normalized_items.append({"product_id": pid, "quantity": qty})
-
-    # ליצור מוצר חדש שהוא מארז
-    box_product = Product(
-        name=name,
-        description="Custom box",
-        price=total_price,
-        quantity=1,
-        badge="BOX",
-        image_url="",
-        is_active=True,
-        is_custom_box=True,
-        box_items=normalized_items,  # <-- JSONB בעמודה של product
-        category_id=2,  # אם אצלך חובה category_id אז תני קטגוריה קבועה של BOX
-    )
-
-    session.add(box_product)
-    session.commit()
-    session.refresh(box_product)
-
-    # להוסיף לעגלה "שורה אחת" של המארז
-    cart = get_or_create_open_cart(session, user.id)
-
-    cart_item = session.exec(
-        select(CartProduct).where(
-            CartProduct.cart_id == cart.id,
-            CartProduct.product_id == box_product.id,
-        )
-    ).first()
-
-    if cart_item:
-        cart_item.quantity += 1
-    else:
-        cart_item = CartProduct(
-            cart_id=cart.id,
-            product_id=box_product.id,
-            quantity=1,
-        )
-        session.add(cart_item)
-
-    session.commit()
-
-    return {"message": "Custom box added to cart", "box_product_id": box_product.id}
-
-
-@router.get("/")
-def get_my_cart(
-    session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
-):
-    cart = get_or_create_open_cart(session, user.id)
-
-    cart_items = session.exec(
-        select(CartProduct).where(CartProduct.cart_id == cart.id)
-    ).all()
-
-    return cart_items
-
-
+# ✅ UPDATE ITEM QUANTITY
 @router.patch("/items/{product_id}")
 def update_item_quantity(
     product_id: int,
@@ -206,6 +184,7 @@ def update_item_quantity(
     return cart_item
 
 
+# ✅ DELETE ITEM
 @router.delete("/items/{product_id}")
 def delete_item_from_cart(
     product_id: int,
@@ -229,6 +208,7 @@ def delete_item_from_cart(
     return {"message": "Item deleted"}
 
 
+# (אופציונלי) ADMIN - אם היה אצלך קודם
 @router.get("/admin/all")
 def admin_list_all_carts(
     session: Session = Depends(get_session),
@@ -258,7 +238,6 @@ def admin_list_all_carts(
                     "product_price": price if product else None,
                     "quantity": qty,
                     "is_custom_box": bool(getattr(product, "is_custom_box", False)) if product else False,
-                    "box_items": getattr(product, "box_items", None) if product else None,
                 }
             )
 

@@ -22,9 +22,13 @@ os.makedirs("static/images", exist_ok=True)
 
 app = FastAPI(title="Gift Shop API")
 
+# ✅ CORS עבור Vite (5173) + עם cookies
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    # אם לפעמים את מריצה React על 3000:
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
 app.add_middleware(
@@ -32,7 +36,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"],  # חשוב בגלל apiKey
 )
 
 @app.on_event("startup")
@@ -43,7 +47,7 @@ def on_startup():
 def root():
     return {"status": "ok"}
 
-# Routers (כולם עם API KEY כמו אצלך)
+# Routers (כולם עם API KEY)
 app.include_router(auth_router, dependencies=[Depends(verify_api_key)])
 app.include_router(products_router, dependencies=[Depends(verify_api_key)])
 app.include_router(favorites_router, dependencies=[Depends(verify_api_key)])
@@ -51,8 +55,6 @@ app.include_router(carts_router, dependencies=[Depends(verify_api_key)])
 app.include_router(categoryRouter, dependencies=[Depends(verify_api_key)])
 app.include_router(single_category_router, dependencies=[Depends(verify_api_key)])
 app.include_router(single_product_router, dependencies=[Depends(verify_api_key)])
-
-# ✅ הוספתי את uploads_router (זה מה שהיה חסר)
 app.include_router(uploads_router, dependencies=[Depends(verify_api_key)])
 
 # Static files
