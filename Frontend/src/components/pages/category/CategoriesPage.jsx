@@ -65,6 +65,13 @@ export default function CategoriesPage() {
 
   const isAdmin = !!me?.is_admin;
 
+  // ✅ FILTERS (NEW)
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [onlyInStock, setOnlyInStock] = useState(false);
+  const [badgeFilter, setBadgeFilter] = useState("ALL"); // ALL / POPULAR / BOX / ...
+  const [sortBy, setSortBy] = useState("NONE"); // NONE / PRICE_ASC / PRICE_DESC / NAME_ASC / NAME_DESC
+
   const PAGE_SIZE = 9;
   const [page, setPage] = useState(1);
 
@@ -119,22 +126,82 @@ export default function CategoriesPage() {
     }
   }, [location.search, navigate]);
 
+  // ✅ category filter (existing)
   const shownProducts = useMemo(() => {
     if (selected === "ALL") return products;
     const id = Number(selected);
     return (products || []).filter((p) => Number(p.category_id) === id);
   }, [products, selected]);
 
+  // ✅ collect badges for dropdown (NEW)
+  const badgeOptions = useMemo(() => {
+    const set = new Set();
+    (products || []).forEach((p) => {
+      const b = String(p?.badge || "").trim();
+      if (b) set.add(b.toUpperCase());
+    });
+    return ["ALL", ...Array.from(set)];
+  }, [products]);
+
+  // ✅ apply filters + sort (NEW)
+  const filteredProducts = useMemo(() => {
+    const min = minPrice === "" ? null : Number(minPrice);
+    const max = maxPrice === "" ? null : Number(maxPrice);
+
+    let list = Array.isArray(shownProducts) ? [...shownProducts] : [];
+
+    // price filter
+    if (min !== null && Number.isFinite(min)) {
+      list = list.filter((p) => Number(p.price ?? 0) >= min);
+    }
+    if (max !== null && Number.isFinite(max)) {
+      list = list.filter((p) => Number(p.price ?? 0) <= max);
+    }
+
+    // stock filter
+    if (onlyInStock) {
+      list = list.filter((p) => Number(p.quantity ?? 0) > 0);
+    }
+
+    // badge filter
+    if (badgeFilter !== "ALL") {
+      const target = String(badgeFilter).toUpperCase();
+      list = list.filter((p) => String(p.badge || "").toUpperCase() === target);
+    }
+
+    // sorting
+    if (sortBy === "PRICE_ASC") {
+      list.sort((a, b) => Number(a.price ?? 0) - Number(b.price ?? 0));
+    } else if (sortBy === "PRICE_DESC") {
+      list.sort((a, b) => Number(b.price ?? 0) - Number(a.price ?? 0));
+    } else if (sortBy === "NAME_ASC") {
+      list.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    } else if (sortBy === "NAME_DESC") {
+      list.sort((a, b) => String(b.name || "").localeCompare(String(a.name || "")));
+    }
+
+    return list;
+  }, [shownProducts, minPrice, maxPrice, onlyInStock, badgeFilter, sortBy]);
+
+  // reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [selected]);
+  }, [selected, minPrice, maxPrice, onlyInStock, badgeFilter, sortBy]);
 
-  const pageCount = Math.max(1, Math.ceil(shownProducts.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
 
   const pagedProducts = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
-    return shownProducts.slice(start, start + PAGE_SIZE);
-  }, [shownProducts, page]);
+    return filteredProducts.slice(start, start + PAGE_SIZE);
+  }, [filteredProducts, page]);
+
+  const clearFilters = () => {
+    setMinPrice("");
+    setMaxPrice("");
+    setOnlyInStock(false);
+    setBadgeFilter("ALL");
+    setSortBy("NONE");
+  };
 
   const createCategory = async () => {
     const name = newName.trim();
@@ -183,7 +250,11 @@ export default function CategoriesPage() {
   };
 
   if (me === undefined) {
-    return <div className="state-box" style={{ margin: 20 }}>Checking session...</div>;
+    return (
+      <div className="state-box" style={{ margin: 20 }}>
+        Checking session...
+      </div>
+    );
   }
 
   return (
@@ -232,6 +303,83 @@ export default function CategoriesPage() {
           })}
         </div>
 
+        {/* ✅ FILTER BAR (NEW) */}
+        <div
+          style={{
+            marginTop: 14,
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <input
+            className="nav__search"
+            style={{ maxWidth: 140 }}
+            type="number"
+            placeholder="Min ₪"
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+          />
+
+          <input
+            className="nav__search"
+            style={{ maxWidth: 140 }}
+            type="number"
+            placeholder="Max ₪"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+          />
+
+          <select
+            className="nav__search"
+            style={{ maxWidth: 180 }}
+            value={badgeFilter}
+            onChange={(e) => setBadgeFilter(e.target.value)}
+          >
+            {badgeOptions.map((b) => (
+              <option key={b} value={b}>
+                Badge: {b}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="nav__search"
+            style={{ maxWidth: 200 }}
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="NONE">Sort: None</option>
+            <option value="PRICE_ASC">Price: Low → High</option>
+            <option value="PRICE_DESC">Price: High → Low</option>
+            <option value="NAME_ASC">Name: A → Z</option>
+            <option value="NAME_DESC">Name: Z → A</option>
+          </select>
+
+          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="checkbox"
+              checked={onlyInStock}
+              onChange={(e) => setOnlyInStock(e.target.checked)}
+            />
+            In stock only
+          </label>
+
+          <button
+            type="button"
+            className="pager-btn"
+            onClick={clearFilters}
+            style={{ height: 38 }}
+          >
+            Clear
+          </button>
+
+          <div style={{ marginLeft: "auto", opacity: 0.8, fontWeight: 700 }}>
+            Showing {filteredProducts.length} items
+          </div>
+        </div>
+
         {isAdmin && (
           <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button
@@ -259,8 +407,8 @@ export default function CategoriesPage() {
       <section className="products-section">
         {loading ? (
           <div className="state-box">Loading...</div>
-        ) : shownProducts.length === 0 ? (
-          <div className="state-box">No products found in this category.</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="state-box">No products found with these filters.</div>
         ) : (
           <>
             <div className="cat-products-grid">
@@ -269,7 +417,6 @@ export default function CategoriesPage() {
                   key={p.id}
                   product={p}
                   isAdmin={isAdmin}
-                  showAddToCart={true}
                   onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
                   onEdit={(data) => {
                     setEditInitial(data);
