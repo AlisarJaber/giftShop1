@@ -12,7 +12,8 @@ from src.Routes.category import router as categoryRouter
 from src.Routes.sinCategory import router as single_category_router
 from src.Routes.sinProduct import router as single_product_router
 from src.Routes.uploads import router as uploads_router
-from src.Routes.debug import router as debug_router
+from src.Routes.export_pdf import router as export_router 
+
 from src.Utils.api_key import verify_api_key
 
 import os
@@ -21,42 +22,40 @@ from src.socketio_server import sio
 
 os.makedirs("static/images", exist_ok=True)
 
-fastapi_app = FastAPI(title="Gift Shop API")
+app = FastAPI(title="Gift Shop API")
 
-# ✅ CORS עבור Vite (5173) + עם cookies
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    # אם לפעמים את מריצה React על 3000:
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
 ]
 
-fastapi_app.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],  # חשוב בגלל apiKey
+    allow_headers=["*"],
 )
 
-@fastapi_app.on_event("startup")
+@app.on_event("startup")
 def on_startup():
     create_db_and_tables()
 
-@fastapi_app.get("/")
+@app.get("/")
 def root():
     return {"status": "ok"}
 
-fastapi_app.include_router(auth_router, dependencies=[Depends(verify_api_key)])
-fastapi_app.include_router(products_router, dependencies=[Depends(verify_api_key)])
-fastapi_app.include_router(favorites_router, dependencies=[Depends(verify_api_key)])
-fastapi_app.include_router(carts_router, dependencies=[Depends(verify_api_key)])
-fastapi_app.include_router(categoryRouter, dependencies=[Depends(verify_api_key)])
-fastapi_app.include_router(single_category_router, dependencies=[Depends(verify_api_key)])
-fastapi_app.include_router(single_product_router, dependencies=[Depends(verify_api_key)])
-fastapi_app.include_router(uploads_router, dependencies=[Depends(verify_api_key)])
-fastapi_app.include_router(debug_router)
-fastapi_app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app = socketio.ASGIApp(sio, fastapi_app)
+app.include_router(auth_router, dependencies=[Depends(verify_api_key)])
+app.include_router(products_router, dependencies=[Depends(verify_api_key)])
+app.include_router(favorites_router, dependencies=[Depends(verify_api_key)])
+app.include_router(carts_router, dependencies=[Depends(verify_api_key)])
+app.include_router(categoryRouter, dependencies=[Depends(verify_api_key)])
+app.include_router(single_category_router, dependencies=[Depends(verify_api_key)])
+app.include_router(single_product_router, dependencies=[Depends(verify_api_key)])
+app.include_router(uploads_router, dependencies=[Depends(verify_api_key)])
+app.include_router(export_router, dependencies=[Depends(verify_api_key)])  # ✅ PDF
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+app = socketio.ASGIApp(sio, app)

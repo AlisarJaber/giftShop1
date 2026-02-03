@@ -59,6 +59,30 @@
   display: block;
 }
 
+.p-stock {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  width: fit-content;
+  line-height: 1;
+}
+
+.p-stock.in {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.p-stock.out {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+
 .p-badge {
   position: absolute;
   top: 12px;

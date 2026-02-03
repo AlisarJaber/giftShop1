@@ -16,7 +16,11 @@ export default function ProductCard({
   onEdit,
 }) {
   const navigate = useNavigate();
-  const { id, name, price, image_url, badge } = product;
+  const { id, name, price, image_url, badge, quantity } = product;
+  const qtyNum =
+    quantity === null || quantity === undefined ? null : Number(quantity);
+
+  const hasQty = Number.isFinite(qtyNum);
 
   const [fav, setFav] = useState(false);
 
@@ -34,6 +38,7 @@ export default function ProductCard({
     e.stopPropagation();
     try {
       const res = await toggleFavorite(id);
+      setFav(!!res.favorite);
       const next = !!res.favorite;
       setFav(next);
 
@@ -101,6 +106,11 @@ export default function ProductCard({
         <div className="p-name" title={name}>
           {name}
         </div>
+        {hasQty && (
+          <div className={`p-stock ${qtyNum === 0 ? "out" : "in"}`}>
+            {qtyNum === 0 ? "Out of stock" : `In stock: ${qtyNum}`}
+          </div>
+        )}
 
         <div className="p-bottom">
           <div className="p-price">₪{price}</div>

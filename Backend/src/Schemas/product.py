@@ -8,6 +8,7 @@ class ProductCard(BaseModel):
     image_url: Optional[str] = None
     badge: Optional[str] = None
     category_id: Optional[int] = None
+    quantity: int = 0
 
 class ProductDetails(ProductCard):
     description: Optional[str] = None
