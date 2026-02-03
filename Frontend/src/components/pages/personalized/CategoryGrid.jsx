@@ -8,6 +8,7 @@ export default function CategoryGrid({
   onSelect,
   onEdit,
   onDelete,
+  isAdmin = false,
 }) {
   return (
     <div className="pg2-cats">
@@ -34,27 +35,29 @@ export default function CategoryGrid({
             <div className="pg2-cat-name">{c.name}</div>
             <div className="pg2-cat-count">{(selections[c.id] || []).length}</div>
 
-            <div className="pg2-admin-actions">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(c);
-                }}
-              >
-                ✏️
-              </button>
+            {isAdmin && (
+              <div className="pg2-admin-actions">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(c);
+                  }}
+                >
+                  ✏️
+                </button>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(c.id);
-                }}
-              >
-                🗑
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.(c.id);
+                  }}
+                >
+                  🗑
+                </button>
+              </div>
+            )}
           </div>
         );
       })}

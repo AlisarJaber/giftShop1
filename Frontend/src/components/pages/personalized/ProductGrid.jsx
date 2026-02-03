@@ -6,16 +6,14 @@ export default function ProductGrid({
   onToggle,
   onEdit,
   onDelete,
+  isAdmin = false,
 }) {
   if (loading) return <div>Loading...</div>;
 
   return (
     <div className="pg2-products">
       {products.map((p) => {
-        const picked = (selections[activeCat.id] || []).some(
-          (x) => x.id === p.id
-        );
-
+        const picked = (selections[activeCat.id] || []).some((x) => x.id === p.id);
         const handleToggle = () => onToggle(p);
 
         return (
@@ -36,27 +34,29 @@ export default function ProductGrid({
             <div>{p.name}</div>
             <div>₪{p.price}</div>
 
-            <div className="pg2-admin-actions product">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(p);
-                }}
-              >
-                ✏️
-              </button>
+            {isAdmin && (
+              <div className="pg2-admin-actions product">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(p);
+                  }}
+                >
+                  ✏️
+                </button>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(p.id);
-                }}
-              >
-                🗑
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.(p.id);
+                  }}
+                >
+                  🗑
+                </button>
+              </div>
+            )}
           </div>
         );
       })}
