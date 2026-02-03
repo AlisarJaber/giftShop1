@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { uploadImage } from "../../../utils/singleApi"
+import { uploadImage } from "../../../utils/singleApi";
 
-export default function CategoryModal({ modal, onClose, onSave }) {
+export default function CategoryModal({ modal, onClose, onSave, isAdmin = false }) {
   const open = !!modal?.open;
+  if (!isAdmin) return null; // ✅ guard
+  if (!open) return null;
+
   const mode = modal?.mode || "create";
   const data = modal?.data || {};
-  const dataId = modal?.data?.id ?? null; // ✅ יציב לדיפנדנסיז
+  const dataId = modal?.data?.id ?? null;
 
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -13,7 +16,6 @@ export default function CategoryModal({ modal, onClose, onSave }) {
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
-  // ✅ מאתחלים שדות רק כשפותחים מודאל / עוברים לפריט אחר
   useEffect(() => {
     if (!open) return;
 
@@ -23,9 +25,7 @@ export default function CategoryModal({ modal, onClose, onSave }) {
 
     setLoading(false);
     setErrMsg("");
-  }, [open, mode, dataId]); // ✅ לא תלוי ב-"data" כולו
-
-  if (!open) return null;
+  }, [open, mode, dataId]);
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
@@ -64,9 +64,7 @@ export default function CategoryModal({ modal, onClose, onSave }) {
           <div className="pg2-modalTitle">
             {mode === "create" ? "Add category" : "Edit category"}
           </div>
-          <button className="pg2-modalX" onClick={onClose} type="button">
-            ✕
-          </button>
+          <button className="pg2-modalX" onClick={onClose} type="button">✕</button>
         </div>
 
         <div className="pg2-modalBody">

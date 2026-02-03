@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 
-export default function ProductModal({ modal, categories, onClose, onSave }) {
+export default function ProductModal({ modal, categories, onClose, onSave, isAdmin = false }) {
   const open = !!modal?.open;
+
+  if (!isAdmin) return null; // ✅ guard
+  if (!open) return null;
+
   const mode = modal?.mode || "create";
   const data = modal?.data || {};
   const [name, setName] = useState("");
@@ -19,10 +23,14 @@ export default function ProductModal({ modal, categories, onClose, onSave }) {
     setDesc(data?.description ?? "");
   }, [open, data]);
 
-  if (!open) return null;
-
   const submit = () => {
-    const p = { name: name.trim(), category_id: Number(categoryId), price: Number(price), image_url: imageUrl.trim() || null, description: desc.trim() || null };
+    const p = {
+      name: name.trim(),
+      category_id: Number(categoryId),
+      price: Number(price),
+      image_url: imageUrl.trim() || null,
+      description: desc.trim() || null,
+    };
     if (!p.name || !p.category_id || !Number.isFinite(p.price) || p.price <= 0) return;
     onSave(p);
   };

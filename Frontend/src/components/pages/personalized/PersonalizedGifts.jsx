@@ -18,6 +18,15 @@ import CategoryModal from "./CategoryModal";
 import ProductModal from "./ProductModal";
 
 export default function PersonalizedGifts() {
+  // ✅ admin gate from localStorage (kept updated by Navigation)
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    user = null;
+  }
+  const isAdmin = !!user?.is_admin;
+
   const [categories, setCategories] = useState([]);
   const [activeCat, setActiveCat] = useState(null);
   const [products, setProducts] = useState([]);
@@ -94,20 +103,23 @@ export default function PersonalizedGifts() {
     <div className="pg2-page">
       <div className="pg2-layout">
         <div className="pg2-left">
-          <div className="pg2-adminCard">
-            <button
-              className="pg2-adminBtn"
-              onClick={() => setCatModal({ open: true, mode: "create" })}
-            >
-              + Add Category
-            </button>
-            <button
-              className="pg2-adminBtn"
-              onClick={() => setProdModal({ open: true, mode: "create" })}
-            >
-              + Add Product
-            </button>
-          </div>
+          {/* ✅ ADMIN BUTTONS - only if admin */}
+          {isAdmin && (
+            <div className="pg2-adminCard">
+              <button
+                className="pg2-adminBtn"
+                onClick={() => setCatModal({ open: true, mode: "create" })}
+              >
+                + Add Category
+              </button>
+              <button
+                className="pg2-adminBtn"
+                onClick={() => setProdModal({ open: true, mode: "create" })}
+              >
+                + Add Product
+              </button>
+            </div>
+          )}
 
           <div className="pg2-intro">
             <h2 className="pg2-intro-title">Create your perfect gift 🎁</h2>
@@ -116,7 +128,6 @@ export default function PersonalizedGifts() {
             </p>
           </div>
 
-          {/* ✅ STEP 1: Categories (wrapped in a section card) */}
           <div className="pg2-section">
             <div className="pg2-section-head">
               <div className="pg2-section-head-left">
@@ -134,15 +145,19 @@ export default function PersonalizedGifts() {
               activeCat={activeCat}
               selections={selections}
               onSelect={setActiveCat}
-              onEdit={(c) => setCatModal({ open: true, mode: "edit", data: c })}
-              onDelete={async (id) => {
-                await deleteSingleCategory(id);
-                loadCategories();
-              }}
+              isAdmin={isAdmin}
+              onEdit={isAdmin ? (c) => setCatModal({ open: true, mode: "edit", data: c }) : undefined}
+              onDelete={
+                isAdmin
+                  ? async (id) => {
+                      await deleteSingleCategory(id);
+                      loadCategories();
+                    }
+                  : undefined
+              }
             />
           </div>
 
-          {/* ✅ STEP 2: Products (wrapped in a section card) */}
           <div className="pg2-section">
             <div className="pg2-section-head">
               <div className="pg2-section-head-left">
@@ -166,11 +181,16 @@ export default function PersonalizedGifts() {
                 activeCat={activeCat}
                 selections={selections}
                 onToggle={togglePick}
-                onEdit={(p) => setProdModal({ open: true, mode: "edit", data: p })}
-                onDelete={async (id) => {
-                  await deleteSingleProduct(id);
-                  loadProducts(activeCat.id);
-                }}
+                isAdmin={isAdmin}
+                onEdit={isAdmin ? (p) => setProdModal({ open: true, mode: "edit", data: p }) : undefined}
+                onDelete={
+                  isAdmin
+                    ? async (id) => {
+                        await deleteSingleProduct(id);
+                        loadProducts(activeCat.id);
+                      }
+                    : undefined
+                }
               />
             )}
           </div>
@@ -184,30 +204,35 @@ export default function PersonalizedGifts() {
         />
       </div>
 
-      <CategoryModal
-        modal={catModal}
-        onClose={() => setCatModal({ open: false })}
-        onSave={async (payload) => {
-          catModal.mode === "create"
-            ? await createSingleCategory(payload)
-            : await updateSingleCategory(catModal.data.id, payload);
-          setCatModal({ open: false });
-          loadCategories();
-        }}
-      />
+      {/* ✅ MODALS - only if admin */}
+      {isAdmin && (
+        <CategoryModal
+          modal={catModal}
+          onClose={() => setCatModal({ open: false })}
+          onSave={async (payload) => {
+            catModal.mode === "create"
+              ? await createSingleCategory(payload)
+              : await updateSingleCategory(catModal.data.id, payload);
+            setCatModal({ open: false });
+            loadCategories();
+          }}
+        />
+      )}
 
-      <ProductModal
-        modal={prodModal}
-        categories={categories}
-        onClose={() => setProdModal({ open: false })}
-        onSave={async (payload) => {
-          prodModal.mode === "create"
-            ? await createSingleProduct(payload)
-            : await updateSingleProduct(prodModal.data.id, payload);
-          setProdModal({ open: false });
-          loadProducts(activeCat.id);
-        }}
-      />
+      {isAdmin && (
+        <ProductModal
+          modal={prodModal}
+          categories={categories}
+          onClose={() => setProdModal({ open: false })}
+          onSave={async (payload) => {
+            prodModal.mode === "create"
+              ? await createSingleProduct(payload)
+              : await updateSingleProduct(prodModal.data.id, payload);
+            setProdModal({ open: false });
+            loadProducts(activeCat.id);
+          }}
+        />
+      )}
     </div>
   );
 }
