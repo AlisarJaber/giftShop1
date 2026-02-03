@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./categories.css";
@@ -6,6 +6,7 @@ import "../Products/products.css";
 import AdminProductModal from "../Products/AdminProductModal";
 import ProductCard from "../Products/ProductCard";
 import { createProduct, updateProduct } from "../../../utils/productsApi";
+import { onInventoryUpdate } from "../../../utils/inventoryBus";
 
 import {
   Home,
@@ -89,34 +90,39 @@ export default function CategoriesPage() {
     if (me === null) navigate("/login", { replace: true });
   }, [me, navigate]);
 
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [catRes, prodRes] = await Promise.all([
+        axios.get(`${API}/categories`, {
+          withCredentials: true,
+          headers: { apiKey: APIKEY },
+        }),
+        axios.get(`${API}/products`, {
+          withCredentials: true,
+          headers: { apiKey: APIKEY },
+        }),
+      ]);
+
+      setCategories(catRes.data || []);
+      setProducts(prodRes.data || []);
+    } catch (e) {
+      alert("Failed to load categories/products");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!me) return;
+    loadAll();
+  }, [me, loadAll]);
 
-    const fetchAll = async () => {
-      setLoading(true);
-      try {
-        const [catRes, prodRes] = await Promise.all([
-          axios.get(`${API}/categories`, {
-            withCredentials: true,
-            headers: { apiKey: APIKEY },
-          }),
-          axios.get(`${API}/products`, {
-            withCredentials: true,
-            headers: { apiKey: APIKEY },
-          }),
-        ]);
-
-        setCategories(catRes.data || []);
-        setProducts(prodRes.data || []);
-      } catch (e) {
-        alert("Failed to load categories/products");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAll();
-  }, [me]);
+  useEffect(() => {
+    if (!me) return;
+    const off = onInventoryUpdate(() => loadAll());
+    return off;
+  }, [me, loadAll]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
