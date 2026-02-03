@@ -6,6 +6,7 @@ import AdminProductModal from "./AdminProductModal";
 import { getProducts, createProduct, updateProduct } from "../../../utils/productsApi";
 import "./products.css";
 import { onInventoryUpdate } from "../../../utils/inventoryBus";
+import { downloadProductsPdf } from "../../../utils/exportApi";
 
 const RECOMMENDED_BADGES = new Set(["recommended", "popular", "featured"]);
 
@@ -141,9 +142,15 @@ export default function ProductsPage() {
           </div>
 
           {isAdmin && (
-            <button className="admin-add" onClick={openAdd}>
-              + Add product
-            </button>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button className="admin-add" onClick={openAdd} type="button">
+                + Add product
+              </button>
+
+              <button className="admin-add" onClick={downloadProductsPdf} type="button">
+                Export Products PDF
+              </button>
+            </div>
           )}
         </div>
 

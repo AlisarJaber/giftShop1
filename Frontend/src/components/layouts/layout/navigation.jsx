@@ -95,7 +95,7 @@ const Navigation = () => {
 
             <div className="nav__center">
                 <Link className="nav__link" to="/products">Home</Link>
-                <Link className="nav__link" to="/categories">Categories</Link>
+                <Link className="nav__link" to="/categories">All product</Link>
                 <Link className="nav__link" to="/personal">Personalized Gifts</Link>
                 {(() => {
                     try {

@@ -14,7 +14,11 @@ export default function ProductCard({
   onEdit,
 }) {
   const navigate = useNavigate();
-  const { id, name, price, image_url, badge } = product;
+  const { id, name, price, image_url, badge, quantity } = product;
+  const qtyNum =
+    quantity === null || quantity === undefined ? null : Number(quantity);
+
+  const hasQty = Number.isFinite(qtyNum);
 
   const [fav, setFav] = useState(false);
 
@@ -25,21 +29,21 @@ export default function ProductCard({
   }, [id]);
 
   const goDetails = () => {
-    navigate(`/products/${id}`)
+    navigate(`/products/${id}`);
   };
 
   const toggleFav = async (e) => {
-    e.stopPropagation()
+    e.stopPropagation();
     try {
-      const res = await toggleFavorite(id)
+      const res = await toggleFavorite(id);
       setFav(!!res.favorite);
     } catch (e2) {
       alert(e2?.response?.data?.detail || "Favorite failed");
     }
-  }
+  };
 
   const handleDelete = async (e) => {
-    e.stopPropagation()
+    e.stopPropagation();
     if (!confirm("Delete this product?")) return;
     try {
       await deleteProduct(id);
@@ -47,17 +51,17 @@ export default function ProductCard({
     } catch (e2) {
       alert(e2?.response?.data?.detail || "Delete failed");
     }
-  }
+  };
 
   const handleEdit = async (e) => {
-    e.stopPropagation()
+    e.stopPropagation();
     try {
-      const data = await getProductById(id)
+      const data = await getProductById(id);
       onEdit?.(data);
     } catch (e2) {
       alert(e2?.response?.data?.detail || "Failed loading product");
     }
-  }
+  };
 
   return (
     <div
@@ -93,6 +97,11 @@ export default function ProductCard({
         <div className="p-name" title={name}>
           {name}
         </div>
+        {hasQty && (
+          <div className={`p-stock ${qtyNum === 0 ? "out" : "in"}`}>
+            {qtyNum === 0 ? "Out of stock" : `In stock: ${qtyNum}`}
+          </div>
+        )}
 
         <div className="p-bottom">
           <div className="p-price">₪{price}</div>
@@ -127,4 +136,3 @@ export default function ProductCard({
     </div>
   );
 }
-
