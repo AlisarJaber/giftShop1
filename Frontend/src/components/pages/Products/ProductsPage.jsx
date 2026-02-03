@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import HeroSection from "./HeroSection";
 import AdminProductModal from "./AdminProductModal";
 import { getProducts, createProduct, updateProduct } from "../../../utils/productsApi";
 import "./products.css";
+import { connectSocket, disconnectSocket } from "../../../utils/socket";
 
 const RECOMMENDED_BADGES = new Set(["recommended", "popular", "featured"]);
 
@@ -35,7 +36,7 @@ export default function ProductsPage() {
     if (!user) navigate("/login", { replace: true });
   }, [user, navigate]);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     setError("");
 
@@ -49,11 +50,25 @@ export default function ProductsPage() {
         }
       })
       .finally(() => setLoading(false));
-  };
+  }, [navigate]);
 
   useEffect(() => {
     if (user) load();
-  }, [user]);
+  }, [user, load]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    connectSocket((data) => {
+      const evt = data?.event;
+
+      if (evt === "item_added" || evt === "item_removed" || evt === "inventory_update") {
+        load();
+      }
+    });
+
+    return () => disconnectSocket();
+  }, [user, load]);
 
   const search = useMemo(() => {
     const params = new URLSearchParams(location.search);
