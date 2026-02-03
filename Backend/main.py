@@ -23,9 +23,13 @@ os.makedirs("static/images", exist_ok=True)
 
 fastapi_app = FastAPI(title="Gift Shop API")
 
+# ✅ CORS עבור Vite (5173) + עם cookies
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    # אם לפעמים את מריצה React על 3000:
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
 fastapi_app.add_middleware(
@@ -33,7 +37,7 @@ fastapi_app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"],  # חשוב בגלל apiKey
 )
 
 @fastapi_app.on_event("startup")

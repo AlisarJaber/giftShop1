@@ -18,5 +18,7 @@ class SinProduct(SQLModel, table=True):
     )
 
     category: Optional["SinCategory"] = Relationship(back_populates="products")
+
+    is_active: bool = True
     
 from src.Models.sinCategory import SinCategory  # noqa
