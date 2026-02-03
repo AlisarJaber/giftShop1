@@ -9,6 +9,9 @@ import { getProductById } from "../../../utils/productsApi";
 import { useNavigate } from "react-router-dom";
 import "./cart.css";
 
+import toast from "react-hot-toast"; // ✅ הוספה
+import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
+
 const CartPage = () => {
   const navigate = useNavigate();
 
@@ -55,18 +58,19 @@ const CartPage = () => {
       const stock = Number(item?.product?.quantity ?? 0);
 
       if (currentQty + 1 > stock) {
-        setError(`Not enough stock. Only ${stock} left.`);
+        const msg = `Not enough stock. Only ${stock} left.`;
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
       await updateCartItemQuantity(productId, currentQty + 1);
       await loadCart();
+      toast.success("Quantity updated");
     } catch (e) {
-      const msg =
-        e?.response?.data?.detail ||
-        e?.response?.data?.message ||
-        "Failed to update quantity";
+      const msg = getErrorText(e, "Failed to update quantity");
       setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -77,12 +81,11 @@ const CartPage = () => {
 
       await updateCartItemQuantity(productId, Math.max(nextQty, 0));
       await loadCart();
+      toast.success("Quantity updated");
     } catch (e) {
-      const msg =
-        e?.response?.data?.detail ||
-        e?.response?.data?.message ||
-        "Failed to update quantity";
+      const msg = getErrorText(e, "Failed to update quantity");
       setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -91,12 +94,11 @@ const CartPage = () => {
       setError("");
       await deleteCartItem(productId);
       await loadCart();
+      toast.success("Item removed from cart");
     } catch (e) {
-      const msg =
-        e?.response?.data?.detail ||
-        e?.response?.data?.message ||
-        "Failed to delete item";
+      const msg = getErrorText(e, "Failed to delete item");
       setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -107,13 +109,12 @@ const CartPage = () => {
 
       await checkoutCart();
       await loadCart();
-      alert("Order completed! 🎉");
+
+      toast.success("Order completed successfully");
     } catch (e) {
-      const msg =
-        e?.response?.data?.detail ||
-        e?.response?.data?.message ||
-        "Checkout failed";
+      const msg = getErrorText(e, "Checkout failed");
       setError(msg);
+      toast.error(msg);
     } finally {
       setCheckingOut(false);
     }
@@ -126,7 +127,9 @@ const CartPage = () => {
         setError("");
         await loadCart();
       } catch (e) {
-        setError("Failed to load cart");
+        const msg = getErrorText(e, "Failed to load cart");
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
@@ -144,15 +147,16 @@ const CartPage = () => {
           <p className="cart-subtitle">Review your items before checkout</p>
         </div>
 
-        {error ? (
-          <div className="cart-error">{error}</div>
-        ) : null}
+        {error ? <div className="cart-error">{error}</div> : null}
 
         {items.length === 0 ? (
           <div className="cart-empty">
             Your cart is empty 🛒
             <div style={{ marginTop: 12 }}>
-              <button className="cart-continue-btn" onClick={() => navigate("/products")}>
+              <button
+                className="cart-continue-btn"
+                onClick={() => navigate("/products")}
+              >
                 Continue Shopping
               </button>
             </div>
@@ -225,7 +229,10 @@ const CartPage = () => {
                             ₪{it.product?.price} per item
                           </span>
                           <span className="cart-item-total">
-                            ₪{(Number(it.product?.price ?? 0) * Number(it.quantity)).toFixed(2)}
+                            ₪
+                            {(
+                              Number(it.product?.price ?? 0) * Number(it.quantity)
+                            ).toFixed(2)}
                           </span>
                         </div>
 
@@ -255,7 +262,8 @@ const CartPage = () => {
                             type="button"
                             style={{
                               opacity: stock === 0 || atMax ? 0.45 : 1,
-                              cursor: stock === 0 || atMax ? "not-allowed" : "pointer",
+                              cursor:
+                                stock === 0 || atMax ? "not-allowed" : "pointer",
                             }}
                           >
                             +
