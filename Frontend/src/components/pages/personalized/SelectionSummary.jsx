@@ -1,13 +1,12 @@
 import { addCustomBoxToCart } from "../../../utils/singleApi";
+import toast from "react-hot-toast";
+import { getErrorText } from "../../../utils/toastText";
 
 export default function SelectionSummary({ categories, selections, total, onAddToCart }) {
   const totalItems = Object.values(selections || {}).flat().length;
 
   const handleAddCustomBoxToCart = async () => {
     try {
-      // selections: { [categoryId]: [products...] }
-      // עושים flatten + מאחדים כפולים לפי product_id כדי שהבאקנד לא ייפול על IDs כפולים.
-
       const flatItemsRaw = Object.values(selections || {})
         .flat()
         .map((p) => ({
@@ -27,7 +26,7 @@ export default function SelectionSummary({ categories, selections, total, onAddT
       }));
 
       if (flatItems.length === 0) {
-        alert("לא נבחרו מוצרים למארז");
+        toast.error("לא נבחרו מוצרים למארז");
         return;
       }
 
@@ -37,13 +36,13 @@ export default function SelectionSummary({ categories, selections, total, onAddT
       });
 
       console.log("BOX ADDED:", res);
-      alert("המארז נוסף לעגלה!");
+      toast.success("המארז נוסף לעגלה!");
 
-      // אופציונלי: לעדכן עגלה/לנווט
-      if (onAddToCart) onAddToCart();
+      // ✅ IMPORTANT: do NOT send another POST from parent
+      if (onAddToCart) onAddToCart({ onlyUI: true });
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.detail || "נכשל להוסיף מארז לעגלה");
+      toast.error(getErrorText(err, "נכשל להוסיף מארז לעגלה"));
     }
   };
 

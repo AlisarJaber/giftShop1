@@ -31,7 +31,6 @@ const AXIOS_CFG = {
 };
 
 export default function PersonalizedGifts() {
-  // ✅ Admin gate as STATE (updates when auth-change fires)
   const [isAdmin, setIsAdmin] = useState(false);
 
   const [categories, setCategories] = useState([]);
@@ -51,7 +50,6 @@ export default function PersonalizedGifts() {
     data: null,
   });
 
-  // ✅ keep admin in sync with localStorage changes (login/logout)
   const syncAdminFromStorage = useCallback(() => {
     try {
       const u = JSON.parse(localStorage.getItem("user") || "null");
@@ -74,7 +72,6 @@ export default function PersonalizedGifts() {
       const active = (cats || []).filter((c) => c.is_active !== false);
       setCategories(active);
 
-      // keep activeCat valid
       setActiveCat((prev) => {
         if (prev?.id && active.some((c) => c.id === prev.id)) return prev;
         return active.length ? active[0] : null;
@@ -125,8 +122,13 @@ export default function PersonalizedGifts() {
     [selections]
   );
 
-  // ✅ send correct payload to backend (/carts/custom-box/add)
-  const handleAddToCart = async () => {
+  // ✅ IMPORTANT: support UI-only call to avoid double POST + double toasts
+  const handleAddToCart = async (opts) => {
+    if (opts?.onlyUI) {
+      setSelections({});
+      return;
+    }
+
     try {
       const flat = Object.values(selections).flat();
       if (!flat.length) {
@@ -139,10 +141,7 @@ export default function PersonalizedGifts() {
         quantity: 1,
       }));
 
-      const body = {
-        name: "My Box",
-        items,
-      };
+      const body = { name: "My Box", items };
 
       await axios.post(`${API}/carts/custom-box/add`, body, AXIOS_CFG);
 
@@ -155,8 +154,6 @@ export default function PersonalizedGifts() {
 
   const pickedCount = activeCat?.id ? (selections[activeCat.id] || []).length : 0;
 
-  // ✅ IMPORTANT:
-  // Always pass functions to grids to avoid undefined crashes / silent failures.
   const safeEditCategory = (c) => {
     if (!isAdmin) return;
     setCatModal({ open: true, mode: "edit", data: c });
@@ -193,7 +190,8 @@ export default function PersonalizedGifts() {
     <div className="pg2-page">
       <div className="pg2-layout">
         <div className="pg2-left">
-         <BackButton />
+          <BackButton />
+
           {isAdmin && (
             <div className="pg2-adminCard">
               <button
@@ -286,7 +284,6 @@ export default function PersonalizedGifts() {
         />
       </div>
 
-        {/* ✅ MODALS - only if admin */}
       {isAdmin && (
         <CategoryModal
           modal={catModal}
@@ -333,8 +330,6 @@ export default function PersonalizedGifts() {
           }}
         />
       )}
-
-
     </div>
   );
 }
