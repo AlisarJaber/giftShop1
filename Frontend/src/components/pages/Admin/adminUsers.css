@@ -1,0 +1,126 @@
+.admin-users-wrap {
+  width: min(1100px, 92vw);
+  margin: 24px auto 60px;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial;
+  color: #2c2c2c;
+}
+
+.admin-users-title {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.admin-users-sub {
+  margin: 0 0 18px;
+  color: #7a7a7a;
+  font-weight: 700;
+}
+
+.admin-users-empty {
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #eee4dc;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.06);
+}
+
+.admin-users-table {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.user-row {
+  background: #fff;
+  border: 1px solid #eee4dc;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.06);
+  padding: 16px;
+}
+
+.user-row-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.user-row-title {
+  font-weight: 900;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.user-row-meta {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b6b6b;
+  line-height: 1.4;
+}
+
+.role-admin {
+  color: #c22303;
+  font-weight: 900;
+}
+
+.role-user {
+  color: #5a3f36;
+  font-weight: 900;
+}
+
+.active {
+  color: #1f7a3b;
+  font-weight: 900;
+}
+
+.blocked {
+  color: #c22303;
+  font-weight: 900;
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mins-input {
+  width: 110px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid #eee4dc;
+  outline: none;
+  font-weight: 800;
+}
+
+.mins-input:focus {
+  border-color: #c22303;
+}
+
+.btn {
+  border: 1px solid #eee4dc;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.btn:hover {
+  filter: brightness(.98);
+}
+
+.btn.danger {
+  background: #c22303;
+  border-color: #c22303;
+  color: #fff;
+  box-shadow: 0 12px 22px rgba(194,35,3,.18);
+}
+
+.btn:disabled,
+.mins-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

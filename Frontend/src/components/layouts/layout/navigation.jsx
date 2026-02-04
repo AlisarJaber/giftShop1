@@ -8,136 +8,148 @@ const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
 
 const Navigation = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const params = new URLSearchParams(location.search);
-    const urlSearch = params.get("search") || "";
+  const params = new URLSearchParams(location.search);
+  const urlSearch = params.get("search") || "";
 
-    const [search, setSearch] = useState(urlSearch);
-    const [me, setMe] = useState(null);
+  const [search, setSearch] = useState(urlSearch);
+  const [me, setMe] = useState(null);
 
-    useEffect(() => {
-        setSearch(urlSearch);
-    }, [urlSearch]);
+  useEffect(() => {
+    setSearch(urlSearch);
+  }, [urlSearch]);
 
-    const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearch(value);
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
 
-        const next = new URLSearchParams(location.search);
-        if (value.trim()) next.set("search", value);
-        else next.delete("search");
+    const next = new URLSearchParams(location.search);
+    if (value.trim()) next.set("search", value);
+    else next.delete("search");
 
-        navigate(`/products?${next.toString()}`, { replace: true });
-    };
+    navigate(`/products?${next.toString()}`, { replace: true });
+  };
 
-    const loadMe = async () => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            setMe(null);
-            return;
-        }
+  const loadMe = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMe(null);
+      return;
+    }
 
-        try {
-            const res = await axios.get(`${API}/auth/me`, {
-                withCredentials: true,
-                headers: { apiKey: APIKEY },
-            });
-            setMe(res.data);
-            localStorage.setItem("user", JSON.stringify(res.data)); // ✅ חדש
+    try {
+      const res = await axios.get(`${API}/auth/me`, {
+        withCredentials: true,
+        headers: { apiKey: APIKEY },
+      });
+      setMe(res.data);
+      localStorage.setItem("user", JSON.stringify(res.data)); // ✅ חדש
+    } catch {
+      setMe(null);
+      localStorage.removeItem("user"); // ✅ חדש
+    }
+  };
 
-        } catch {
-            setMe(null);
-            localStorage.removeItem("user"); // ✅ חדש
-        }
+  useEffect(() => {
+    loadMe();
+    const onAuthChange = () => loadMe();
+    window.addEventListener("auth-change", onAuthChange);
+    return () => window.removeEventListener("auth-change", onAuthChange);
+  }, []);
 
-    };
+  useEffect(() => {
+    loadMe();
+  }, [location.pathname]);
 
-    useEffect(() => {
-        loadMe();
-        const onAuthChange = () => loadMe();
-        window.addEventListener("auth-change", onAuthChange);
-        return () => window.removeEventListener("auth-change", onAuthChange);
-    }, []);
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        `${API}/auth/logout`,
+        {},
+        { withCredentials: true, headers: { apiKey: APIKEY } }
+      );
+    } catch {}
 
-    useEffect(() => {
-        loadMe();
-    }, [location.pathname]);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("auth-change"));
+    navigate("/login", { replace: true });
+  };
 
-    const handleLogout = async () => {
-        try {
-            await axios.post(
-                `${API}/auth/logout`,
-                {},
-                { withCredentials: true, headers: { apiKey: APIKEY } }
-            );
-        } catch { }
+  const hideOnAuthPages =
+    location.pathname === "/login" || location.pathname === "/signup";
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.dispatchEvent(new Event("auth-change"));
-        navigate("/login", { replace: true });
-    };
+  if (!me || hideOnAuthPages) return null;
 
-    const hideOnAuthPages =
-        location.pathname === "/login" || location.pathname === "/signup";
+  return (
+    <nav className="nav">
+      <div className="nav__right">
+        <span className="nav__logo">🎁</span>
+        <span className="nav__title">Gift Shop</span>
+      </div>
 
-    if (!me || hideOnAuthPages) return null;
+      <div className="nav__center">
+        <Link className="nav__link" to="/products">
+          Home
+        </Link>
+        <Link className="nav__link" to="/categories">
+          All product
+        </Link>
+        <Link className="nav__link" to="/personal">
+          Personalized Gifts
+        </Link>
 
-    return (
+        {(() => {
+          try {
+            const user = JSON.parse(localStorage.getItem("user"));
+            return user?.is_admin ? (
+              <>
+                <Link to="/admin/carts" className="nav__link">
+                  Admin Carts
+                </Link>
+                <Link to="/admin/users" className="nav__link">
+                  Admin Users
+                </Link>
+              </>
+            ) : null;
+          } catch {
+            return null;
+          }
+        })()}
 
-        <nav className="nav">
-            <div className="nav__right">
-                <span className="nav__logo">🎁</span>
-                <span className="nav__title">Gift Shop</span>
-            </div>
+        <input
+          className="nav__search"
+          type="text"
+          placeholder="Search products..."
+          value={search}
+          onChange={handleSearchChange}
+        />
+      </div>
 
-            <div className="nav__center">
-                <Link className="nav__link" to="/products">Home</Link>
-                <Link className="nav__link" to="/categories">All product</Link>
-                <Link className="nav__link" to="/personal">Personalized Gifts</Link>
-                {(() => {
-                    try {
-                        const user = JSON.parse(localStorage.getItem("user"));
-                        return user?.is_admin ? (
-                            <Link to="/admin/carts" className="nav__link">
-                                Admin Carts
-                            </Link>
-                        ) : null;
-                    } catch {
-                        return null;
-                    }
-                })()}
+      <div className="nav__left">
+        {me && (
+          <span className="nav__hello">
+            👋 Hello <strong>{me.first_name}</strong>
+          </span>
+        )}
 
-                <input
-                    className="nav__search"
-                    type="text"
-                    placeholder="Search products..."
-                    value={search}
-                    onChange={handleSearchChange}
-                />
-            </div>
+        {me && (
+          <button className="nav__btn" onClick={handleLogout}>
+            LOG OUT
+          </button>
+        )}
 
-            <div className="nav__left">
-                {me && (
-                    <span className="nav__hello">
-                        👋 Hello <strong>{me.first_name}</strong>
-                    </span>
-                )}
-
-                {me && (
-                    <button className="nav__btn" onClick={handleLogout}>
-                        LOG OUT
-                    </button>
-                )}
-
-                <Link className="nav__icon" to="/cart">🛒</Link>
-                <Link to="/favorites" className="nav__iconLink" title="Favorites">❤️</Link>
-
-            </div>
-        </nav>
-    );
+        <Link className="nav__icon" to="/cart">
+          🛒
+        </Link>
+        <Link to="/favorites" className="nav__iconLink" title="Favorites">
+          ❤️
+        </Link>
+      </div>
+    </nav>
+  );
 };
 
 export default Navigation;
