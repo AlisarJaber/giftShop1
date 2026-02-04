@@ -198,10 +198,14 @@ export default function PersonalizedGifts() {
               <button
                 type="button"
                 className="pg2-adminBtn"
-                onClick={() => setCatModal({ open: true, mode: "create", data: null })}
+                onClick={() => {
+                  console.log("CLICK ADD CATEGORY");
+                  setCatModal({ open: true, mode: "create", data: null });
+                }}
               >
                 + Add Category
               </button>
+
               <button
                 type="button"
                 className="pg2-adminBtn"
@@ -281,10 +285,11 @@ export default function PersonalizedGifts() {
         />
       </div>
 
-      {/* ✅ MODALS - only if admin */}
+        {/* ✅ MODALS - only if admin */}
       {isAdmin && (
         <CategoryModal
           modal={catModal}
+          isAdmin={isAdmin}
           onClose={() => setCatModal({ open: false, mode: "create", data: null })}
           onSave={async (payload) => {
             try {
@@ -307,6 +312,7 @@ export default function PersonalizedGifts() {
       {isAdmin && (
         <ProductModal
           modal={prodModal}
+          isAdmin={isAdmin}
           categories={categories}
           onClose={() => setProdModal({ open: false, mode: "create", data: null })}
           onSave={async (payload) => {
@@ -326,6 +332,8 @@ export default function PersonalizedGifts() {
           }}
         />
       )}
+
+
     </div>
   );
 }

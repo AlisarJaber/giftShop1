@@ -552,3 +552,115 @@ button{font-family:inherit}
   pointer-events: auto;
   cursor: pointer;
 }
+
+/* =====================
+   ADMIN BUTTONS
+===================== */
+.pg2-adminCard{
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 20;
+}
+
+.pg2-adminBtn{
+  background: #c22303;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pg2-adminBtn:hover{
+  opacity: 0.9;
+}
+
+/* =====================
+   MODAL
+===================== */
+.pg2-modalBackdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.pg2-modalCard{
+  width: min(520px, 92vw);
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.pg2-modalHead{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pg2-modalX{
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.pg2-modalBody{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pg2-modalBody input[type="text"],
+.pg2-modalBody input[type="file"],
+.pg2-modalBody input{
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.pg2-modalPreview{
+  width: 100%;
+  max-width: 260px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.pg2-modalActions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.pg2-modalActions .ghost{
+  background: transparent;
+  border: 1px solid #ccc;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.pg2-modalActions .primary{
+  background: #c22303;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.error{
+  color: #c22303;
+  font-weight: 700;
+}

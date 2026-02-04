@@ -3,7 +3,7 @@ import { uploadImage } from "../../../utils/singleApi";
 
 export default function CategoryModal({ modal, onClose, onSave, isAdmin = false }) {
   const open = !!modal?.open;
-  if (!isAdmin) return null; // ✅ guard
+  if (!isAdmin) return null;
   if (!open) return null;
 
   const mode = modal?.mode || "create";
@@ -53,8 +53,12 @@ export default function CategoryModal({ modal, onClose, onSave, isAdmin = false 
       is_active: !!isActive,
     };
 
-    if (!payload.name) return;
-    onSave(payload);
+    if (!payload.name) {
+      setErrMsg("Name is required");
+      return;
+    }
+
+    onSave?.(payload);
   };
 
   return (
@@ -64,7 +68,9 @@ export default function CategoryModal({ modal, onClose, onSave, isAdmin = false 
           <div className="pg2-modalTitle">
             {mode === "create" ? "Add category" : "Edit category"}
           </div>
-          <button className="pg2-modalX" onClick={onClose} type="button">✕</button>
+          <button className="pg2-modalX" onClick={onClose} type="button">
+            ✕
+          </button>
         </div>
 
         <div className="pg2-modalBody">
