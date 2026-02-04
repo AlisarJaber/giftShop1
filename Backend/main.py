@@ -58,4 +58,4 @@ app.include_router(export_router, dependencies=[Depends(verify_api_key)])  # ✅
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app = socketio.ASGIApp(sio, app)
+asgi_app = socketio.ASGIApp(sio, app)  # לא לדרוס את app
