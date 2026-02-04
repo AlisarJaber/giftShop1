@@ -3,6 +3,7 @@ import "./personalized.css";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { getErrorText } from "../../../utils/toastText";
+import BackButton from "../../ui/BackButton";
 
 import {
   getSingleCategories,
@@ -192,7 +193,7 @@ export default function PersonalizedGifts() {
     <div className="pg2-page">
       <div className="pg2-layout">
         <div className="pg2-left">
-          {/* ✅ ADMIN BUTTONS - only if admin */}
+         <BackButton />
           {isAdmin && (
             <div className="pg2-adminCard">
               <button

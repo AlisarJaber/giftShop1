@@ -11,6 +11,7 @@ import "./cart.css";
 
 import toast from "react-hot-toast"; // ✅ הוספה
 import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
+import BackButton from "../../ui/BackButton";
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -142,10 +143,13 @@ const CartPage = () => {
   return (
     <div className="cart-page">
       <div className="cart-container">
+        <BackButton />
         <div className="cart-header">
           <h2 className="cart-title">Your Shopping Cart</h2>
           <p className="cart-subtitle">Review your items before checkout</p>
         </div>
+        
+
 
         {error ? <div className="cart-error">{error}</div> : null}
 

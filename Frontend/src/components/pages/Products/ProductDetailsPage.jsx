@@ -5,6 +5,7 @@ import "./productDetails.css";
 import { addToCart } from "../../../utils/cartApi.js";
 import toast from "react-hot-toast"; // ✅ הוספה
 import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
+import BackButton from "../../ui/BackButton";
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -64,10 +65,7 @@ export default function ProductDetailsPage() {
 
   return (
     <div className="pd-wrap">
-      <button className="pd-back" onClick={() => navigate(-1)}>
-        ← Back
-      </button>
-
+      <BackButton />
       <div className="pd-card">
         <div className="pd-imgBox">
           <img
@@ -75,6 +73,7 @@ export default function ProductDetailsPage() {
             alt={product.name}
           />
         </div>
+        
 
         <div className="pd-info">
           <div className="pd-top">

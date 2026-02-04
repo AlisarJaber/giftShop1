@@ -45,6 +45,7 @@ def get_my_cart(
     ).all()
     return cart_items
 
+
 @router.post("/custom-box/add", status_code=status.HTTP_201_CREATED)
 def create_custom_box_and_add_to_cart(
     body: CustomBoxCreate,
@@ -117,6 +118,7 @@ def create_custom_box_and_add_to_cart(
 
     session.commit()
     return {"added_product_id": custom_product.id, "total": total}
+
 
 @router.post("/add")
 def add_prod_to_cart(
@@ -204,46 +206,45 @@ def delete_item_from_cart(
     return {"message": "Item deleted"}
 
 
-@router.get("/admin/all")
-def admin_list_all_carts(
+@router.post("/checkout", status_code=status.HTTP_200_OK)
+def checkout_cart(
     session: Session = Depends(get_session),
-    admin=Depends(require_admin),
+    user: User = Depends(get_current_user),
 ):
-    carts = session.exec(select(Cart).order_by(Cart.id.desc())).all()
-    result = []
+    cart = get_or_create_open_cart(session, user.id)
 
-    for cart in carts:
-        cart_items = session.exec(
-            select(CartProduct).where(CartProduct.cart_id == cart.id)
-        ).all()
+    items = session.exec(
+        select(CartProduct).where(CartProduct.cart_id == cart.id)
+    ).all()
 
-        items = []
-        total_price = 0
+    if not items:
+        raise HTTPException(status_code=400, detail="Cart is empty")
 
-        for it in cart_items:
-            product = session.get(Product, it.product_id)
-            price = int(product.price) if product and product.price is not None else 0
-            qty = int(it.quantity or 0)
-            total_price += price * qty
+    for it in items:
+        product = session.get(Product, it.product_id)
+        if not product or not product.is_active:
+            raise HTTPException(status_code=400, detail=f"Product {it.product_id} not found/active")
 
-            items.append(
-                {
-                    "product_id": it.product_id,
-                    "product_name": product.name if product else None,
-                    "product_price": price if product else None,
-                    "quantity": qty,
-                    "is_custom_box": bool(getattr(product, "is_custom_box", False)) if product else False,
-                }
+        if bool(getattr(product, "is_custom_box", False)):
+            continue
+
+        stock = int(product.quantity or 0)
+        need = int(it.quantity or 0)
+
+        if need <= 0:
+            raise HTTPException(status_code=400, detail="Invalid cart quantity")
+
+        if stock < need:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Not enough stock for '{product.name}'. Need {need}, have {stock}"
             )
 
-        result.append(
-            {
-                "id": cart.id,
-                "user_id": cart.user_id,
-                "is_paid": cart.is_paid,
-                "total_price": total_price,
-                "items": items,
-            }
-        )
+        product.quantity = stock - need
+        session.add(product)
 
-    return result
+    cart.is_paid = True
+    session.add(cart)
+    session.commit()
+
+    return {"ok": True, "paid_cart_id": cart.id}
