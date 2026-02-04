@@ -275,13 +275,13 @@ const CartPage = () => {
                         ) : null}
                       </div>
                       <img
-                        src={
-                          it.product?.image_url ||
-                          it.product?.image ||
-                          "https://via.placeholder.com/90"
-                        }
+                        src={it.product?.image_url || it.product?.image || "http://localhost:8000/static/images/custom_gift_box.png"}
                         alt={it.product?.name || "product"}
                         className="cart-item-image"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "http://localhost:8000/static/images/custom_gift_box.png";
+                        }}
                       />
                     </div>
                   );

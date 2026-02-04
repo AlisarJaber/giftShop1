@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
+import os
 
 from database import get_session
 from src.Utils.deps import get_current_user, require_admin
@@ -13,6 +14,9 @@ from src.Schemas.cart import AddToCartRequest
 from src.Schemas.custom_box import CustomBoxCreate
 
 router = APIRouter(prefix="/carts", tags=["carts"])
+
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
+CUSTOM_BOX_IMAGE_URL = f"{PUBLIC_BASE_URL}/static/images/custom_gift_box.png"
 
 
 def get_or_create_open_cart(session: Session, user_id: int) -> Cart:
@@ -30,7 +34,6 @@ def get_or_create_open_cart(session: Session, user_id: int) -> Cart:
     return cart
 
 
-# ✅ GET CART (זה מה שחסר לך - בגלל זה היה 404)
 @router.get("/")
 def get_my_cart(
     session: Session = Depends(get_session),
@@ -42,8 +45,6 @@ def get_my_cart(
     ).all()
     return cart_items
 
-
-# ✅ ADD CUSTOM BOX AS ONE PRODUCT
 @router.post("/custom-box/add", status_code=status.HTTP_201_CREATED)
 def create_custom_box_and_add_to_cart(
     body: CustomBoxCreate,
@@ -68,7 +69,7 @@ def create_custom_box_and_add_to_cart(
     sin_products = session.exec(
         select(SinProduct).where(
             SinProduct.id.in_(sin_ids),
-            SinProduct.is_active == True,   # אצלך כבר הוספת
+            SinProduct.is_active == True,
         )
     ).all()
 
@@ -86,12 +87,11 @@ def create_custom_box_and_add_to_cart(
     name = body.name or "My Box"
     names = ", ".join(parts)
 
-    # ליצור מוצר חדש בטבלת products (מארז)
     custom_product = Product(
         name=name,
         description=f"Custom box includes: {names}",
         price=total,
-        image_url="https://via.placeholder.com/800x500?text=Custom+Gift+Box",
+        image_url=CUSTOM_BOX_IMAGE_URL,
         is_active=True,
         is_custom_box=True,
         category_id=None
@@ -118,8 +118,6 @@ def create_custom_box_and_add_to_cart(
     session.commit()
     return {"added_product_id": custom_product.id, "total": total}
 
-
-# ✅ ADD REGULAR PRODUCT
 @router.post("/add")
 def add_prod_to_cart(
     cart_prod_request: AddToCartRequest,
@@ -149,7 +147,6 @@ def add_prod_to_cart(
     return {"message": "Product added to cart"}
 
 
-# ✅ UPDATE ITEM QUANTITY
 @router.patch("/items/{product_id}")
 def update_item_quantity(
     product_id: int,
@@ -184,7 +181,6 @@ def update_item_quantity(
     return cart_item
 
 
-# ✅ DELETE ITEM
 @router.delete("/items/{product_id}")
 def delete_item_from_cart(
     product_id: int,
@@ -208,7 +204,6 @@ def delete_item_from_cart(
     return {"message": "Item deleted"}
 
 
-# (אופציונלי) ADMIN - אם היה אצלך קודם
 @router.get("/admin/all")
 def admin_list_all_carts(
     session: Session = Depends(get_session),
