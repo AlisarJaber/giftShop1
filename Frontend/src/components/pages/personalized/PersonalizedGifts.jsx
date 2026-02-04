@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import "./personalized.css";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { getErrorText } from "../../../utils/toastText";
 import BackButton from "../../ui/BackButton";
@@ -21,14 +20,6 @@ import ProductGrid from "./ProductGrid";
 import SelectionSummary from "./SelectionSummary";
 import CategoryModal from "./CategoryModal";
 import ProductModal from "./ProductModal";
-
-const API = "http://localhost:8000";
-const APIKEY = "SEACRET1234567";
-
-const AXIOS_CFG = {
-  withCredentials: true,
-  headers: { apiKey: APIKEY },
-};
 
 export default function PersonalizedGifts() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -122,36 +113,6 @@ export default function PersonalizedGifts() {
     [selections]
   );
 
-  // ✅ IMPORTANT: support UI-only call to avoid double POST + double toasts
-  const handleAddToCart = async (opts) => {
-    if (opts?.onlyUI) {
-      setSelections({});
-      return;
-    }
-
-    try {
-      const flat = Object.values(selections).flat();
-      if (!flat.length) {
-        toast.error("Please select at least one item to create a gift box");
-        return;
-      }
-
-      const items = flat.map((p) => ({
-        product_id: Number(p.id),
-        quantity: 1,
-      }));
-
-      const body = { name: "My Box", items };
-
-      await axios.post(`${API}/carts/custom-box/add`, body, AXIOS_CFG);
-
-      toast.success("Gift box added to cart successfully");
-      setSelections({});
-    } catch (e) {
-      toast.error(getErrorText(e, "Failed to add gift box to cart"));
-    }
-  };
-
   const pickedCount = activeCat?.id ? (selections[activeCat.id] || []).length : 0;
 
   const safeEditCategory = (c) => {
@@ -197,10 +158,7 @@ export default function PersonalizedGifts() {
               <button
                 type="button"
                 className="pg2-adminBtn"
-                onClick={() => {
-                  console.log("CLICK ADD CATEGORY");
-                  setCatModal({ open: true, mode: "create", data: null });
-                }}
+                onClick={() => setCatModal({ open: true, mode: "create", data: null })}
               >
                 + Add Category
               </button>
@@ -254,9 +212,7 @@ export default function PersonalizedGifts() {
                 </h3>
               </div>
 
-              {activeCat && (
-                <div className="pg2-selected-counter">Selected: {pickedCount}/2</div>
-              )}
+              {activeCat && <div className="pg2-selected-counter">Selected: {pickedCount}/2</div>}
             </div>
 
             {!activeCat ? (
@@ -280,7 +236,8 @@ export default function PersonalizedGifts() {
           categories={categories}
           selections={selections}
           total={total}
-          onAddToCart={handleAddToCart}
+          // ✅ חשוב: כאן לא עושים POST, רק מנקים בחירה אחרי שהתווסף בהצלחה
+          onAddToCart={() => setSelections({})}
         />
       </div>
 
@@ -333,3 +290,16 @@ export default function PersonalizedGifts() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
