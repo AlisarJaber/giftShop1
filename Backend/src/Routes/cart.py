@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 import os
-
+from typing import List
 from database import get_session
 from src.Utils.deps import get_current_user, require_admin
 
@@ -248,3 +248,36 @@ def checkout_cart(
     session.commit()
 
     return {"ok": True, "paid_cart_id": cart.id}
+
+
+@router.get("/admin/all")
+def admin_all_carts(
+    session: Session = Depends(get_session),
+    admin: User = Depends(require_admin),
+):
+    carts = session.exec(select(Cart).order_by(Cart.id.desc())).all()
+
+    out = []
+    for c in carts:
+        items_rows = session.exec(
+            select(CartProduct).where(CartProduct.cart_id == c.id)
+        ).all()
+
+        items = []
+        for row in items_rows:
+            p = session.get(Product, row.product_id)
+            items.append({
+                "product_id": row.product_id,
+                "quantity": int(row.quantity or 0),
+                "product_name": getattr(p, "name", None) if p else None,
+                "product_price": float(getattr(p, "price", 0) or 0) if p else 0,
+            })
+
+        out.append({
+            "id": c.id,
+            "user_id": c.user_id,
+            "is_paid": bool(c.is_paid),
+            "items": items,
+        })
+
+    return out
