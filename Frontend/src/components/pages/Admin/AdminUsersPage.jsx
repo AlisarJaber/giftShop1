@@ -2,13 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import "./adminUsers.css";
 import { getAllUsers, blockUser, unblockUser } from "../../../utils/usersApi";
 
+const DAYS_TO_MINUTES = 1440;
+
 export default function AdminUsersPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   // UI state
-  const [blockMinutes, setBlockMinutes] = useState({});
+  const [blockDays, setBlockDays] = useState({});
   const [busyId, setBusyId] = useState(null);
 
   const load = async () => {
@@ -30,7 +32,6 @@ export default function AdminUsersPage() {
   }, []);
 
   const sortedRows = useMemo(() => {
-    // אדמין למעלה, ואז לפי id
     return [...rows].sort((a, b) => {
       const aa = a?.is_admin ? 1 : 0;
       const bb = b?.is_admin ? 1 : 0;
@@ -43,13 +44,15 @@ export default function AdminUsersPage() {
     const userId = u?.id;
     if (!userId) return;
 
-    const minutesRaw = blockMinutes[userId];
-    const minutes = Number(minutesRaw);
+    const daysRaw = blockDays[userId];
+    const days = Number(daysRaw);
 
-    if (!Number.isFinite(minutes) || minutes <= 0) {
-      alert("Enter valid minutes (> 0)");
+    if (!Number.isFinite(days) || days <= 0) {
+      alert("Enter valid days (> 0)");
       return;
     }
+
+    const minutes = days * DAYS_TO_MINUTES;
 
     try {
       setBusyId(userId);
@@ -85,87 +88,71 @@ export default function AdminUsersPage() {
       <h1 className="admin-users-title">All Users (Admin)</h1>
       <p className="admin-users-sub">View users and block/unblock access</p>
 
-      {sortedRows.length === 0 ? (
-        <div className="admin-users-empty">No users found.</div>
-      ) : (
-        <div className="admin-users-table">
-          {sortedRows.map((u) => {
-            const id = u?.id;
-            const isAdmin = !!u?.is_admin;
+      <div className="admin-users-table">
+        {sortedRows.map((u) => {
+          const id = u?.id;
+          const isAdmin = !!u?.is_admin;
+          const isBlocked = u?.is_blocked === true;
 
-            // אם בבאקאנד נחזיר blocked_until (timestamp או null) נוכל להציג:
-            const blockedUntil = u?.blocked_until ?? null; // optional
-            const isBlocked =
-              u?.is_blocked === true || (blockedUntil ? true : false); // optional fallback
-
-            return (
-              <div key={id} className="user-row">
-                <div className="user-row-top">
-                  <div>
-                    <div className="user-row-title">
-                      User #{id} • {u?.first_name} {u?.last_name}
-                    </div>
-                    <div className="user-row-meta">
-                      Email: <b>{u?.email}</b>
-                      {"  "}• Role:{" "}
-                      <span className={isAdmin ? "role-admin" : "role-user"}>
-                        {isAdmin ? "Admin" : "User"}
-                      </span>
-                      {"  "}• Status:{" "}
-                      <span className={isBlocked ? "blocked" : "active"}>
-                        {isBlocked ? "Blocked" : "Active"}
-                      </span>
-                      {blockedUntil ? (
-                        <>
-                          {"  "}• Blocked until: <b>{String(blockedUntil)}</b>
-                        </>
-                      ) : null}
-                    </div>
+          return (
+            <div key={id} className="user-row">
+              <div className="user-row-top">
+                <div>
+                  <div className="user-row-title">
+                    User #{id} • {u?.first_name} {u?.last_name}
                   </div>
-
-                  <div className="user-actions">
-                    <input
-                      className="mins-input"
-                      type="number"
-                      min="1"
-                      placeholder="minutes"
-                      value={blockMinutes[id] ?? ""}
-                      onChange={(e) =>
-                        setBlockMinutes((prev) => ({
-                          ...prev,
-                          [id]: e.target.value,
-                        }))
-                      }
-                      disabled={busyId === id || isAdmin}
-                      title={isAdmin ? "Cannot block admin" : "Block minutes"}
-                    />
-
-                    <button
-                      className="btn danger"
-                      type="button"
-                      onClick={() => handleBlock(u)}
-                      disabled={busyId === id || isAdmin}
-                      title={isAdmin ? "Cannot block admin" : "Block user"}
-                    >
-                      Block
-                    </button>
-
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => handleUnblock(u)}
-                      disabled={busyId === id || isAdmin}
-                      title={isAdmin ? "Cannot unblock admin" : "Unblock user"}
-                    >
-                      Unblock
-                    </button>
+                  <div className="user-row-meta">
+                    Email: <b>{u?.email}</b> • Role:{" "}
+                    <span className={isAdmin ? "role-admin" : "role-user"}>
+                      {isAdmin ? "Admin" : "User"}
+                    </span>{" "}
+                    • Status:{" "}
+                    <span className={isBlocked ? "blocked" : "active"}>
+                      {isBlocked ? "Blocked" : "Active"}
+                    </span>
                   </div>
                 </div>
+
+                <div className="user-actions">
+                  <input
+                    className="mins-input"
+                    type="number"
+                    min="1"
+                    placeholder="days"
+                    value={blockDays[id] ?? ""}
+                    onChange={(e) =>
+                      setBlockDays((prev) => ({
+                        ...prev,
+                        [id]: e.target.value,
+                      }))
+                    }
+                    disabled={busyId === id || isAdmin}
+                    title={isAdmin ? "Cannot block admin" : "Block days"}
+                  />
+
+                  <button
+                    className="btn danger"
+                    type="button"
+                    onClick={() => handleBlock(u)}
+                    disabled={busyId === id || isAdmin}
+                  >
+                    Block
+                  </button>
+
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => handleUnblock(u)}
+                    disabled={busyId === id || isAdmin}
+                  >
+                    Unblock
+                  </button>
+                </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
