@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import List
+from pydantic import BaseModel
+from typing import List as TList
+import os
 
 from database import get_session
 from src.Schemas.product import (
@@ -18,9 +21,6 @@ from src.Services.product_service import (
 )
 from src.Utils.deps import get_current_user, require_admin
 
-from pydantic import BaseModel
-from typing import List as TList
-
 from src.Models.product import Product
 from src.Models.sinProduct import SinProduct
 from src.Models.cart import Cart
@@ -28,11 +28,14 @@ from src.Models.cart import CartProduct
 
 from src.socketio_server import emit_inventory
 
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
+CUSTOM_BOX_IMAGE_URL = f"{PUBLIC_BASE_URL}/static/images/custom_gift_box.png"
+
 router = APIRouter(prefix="/products", tags=["products"])
 
 
 class CustomBoxCreate(BaseModel):
-    items: TList[int] 
+    items: TList[int]
 
 
 @router.get("", response_model=List[ProductCard])
@@ -94,9 +97,9 @@ async def create_custom_box_and_add_to_cart(
         name="Custom Gift Box",
         description=f"Includes: {names}",
         price=total,
-        image_url="https://via.placeholder.com/800x500?text=Custom+Gift+Box",
+        image_url=CUSTOM_BOX_IMAGE_URL,
         is_active=True,
-        is_custom_box=True,  
+        is_custom_box=True,
         category_id=None
     )
     session.add(custom_product)

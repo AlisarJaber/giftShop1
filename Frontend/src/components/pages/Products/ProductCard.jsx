@@ -6,8 +6,8 @@ import {
   getFavoriteIds,
   toggleFavorite,
 } from "../../../utils/productsApi";
-import toast from "react-hot-toast"; // ✅ הוספה
-import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
+import toast from "react-hot-toast";
+import { getErrorText } from "../../../utils/toastText";
 
 export default function ProductCard({
   product,
@@ -17,9 +17,9 @@ export default function ProductCard({
 }) {
   const navigate = useNavigate();
   const { id, name, price, image_url, badge, quantity } = product;
+
   const qtyNum =
     quantity === null || quantity === undefined ? null : Number(quantity);
-
   const hasQty = Number.isFinite(qtyNum);
 
   const [fav, setFav] = useState(false);
@@ -38,11 +38,8 @@ export default function ProductCard({
     e.stopPropagation();
     try {
       const res = await toggleFavorite(id);
-      setFav(!!res.favorite);
       const next = !!res.favorite;
       setFav(next);
-
-      // ✅ הודעה קטנה רק כשיש שינוי (לא חובה אבל נחמד)
       toast.success(next ? "Added to favorites" : "Removed from favorites");
     } catch (e2) {
       toast.error(getErrorText(e2, "Could not update favorites"));
@@ -96,9 +93,13 @@ export default function ProductCard({
       <div className="p-imgBox">
         <img
           className="p-img"
-          src={image_url || "https://via.placeholder.com/800x600?text=Gift"}
+          src={image_url || "https://placehold.co/800x600?text=Gift"}
           alt={name}
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null; // למנוע לופ
+            e.currentTarget.src = "https://placehold.co/800x600?text=Gift";
+          }}
         />
       </div>
 
@@ -106,6 +107,7 @@ export default function ProductCard({
         <div className="p-name" title={name}>
           {name}
         </div>
+
         {hasQty && (
           <div className={`p-stock ${qtyNum === 0 ? "out" : "in"}`}>
             {qtyNum === 0 ? "Out of stock" : `In stock: ${qtyNum}`}

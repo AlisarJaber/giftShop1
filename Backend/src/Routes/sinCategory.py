@@ -1,24 +1,31 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
+from typing import List
 
 from database import get_session
 from src.Models.sinCategory import SinCategory
-from src.Schemas.sinCategory import SinCategoryCreate, SinCategoryUpdate
+from src.Schemas.sinCategory import SinCategoryCreate, SinCategoryUpdate, SinCategoryRead
 from src.Utils.deps import require_admin
 
 router = APIRouter(prefix="/single-categories", tags=["Single Categories"])
 
-@router.get("/")
-def get_categories(session: Session = Depends(get_session)):
-    return session.exec(select(SinCategory).where(SinCategory.is_active == True)).all()
 
-@router.post("/", response_model=SinCategory)
+@router.get("/", response_model=List[SinCategoryRead])
+def get_categories(session: Session = Depends(get_session)):
+    return session.exec(
+        select(SinCategory).where(SinCategory.is_active == True)
+    ).all()
+
+
+@router.post("/", response_model=SinCategoryRead)
 def create_category(
     body: SinCategoryCreate,
     session: Session = Depends(get_session),
     _admin=Depends(require_admin)
 ):
-    existing = session.exec(select(SinCategory).where(SinCategory.name == body.name)).first()
+    existing = session.exec(
+        select(SinCategory).where(SinCategory.name == body.name)
+    ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Category already exists")
 
@@ -32,7 +39,8 @@ def create_category(
     session.refresh(cat)
     return cat
 
-@router.put("/{category_id}", response_model=SinCategory)
+
+@router.put("/{category_id}", response_model=SinCategoryRead)
 def update_category(
     category_id: int,
     body: SinCategoryUpdate,
@@ -55,6 +63,7 @@ def update_category(
     session.refresh(cat)
     return cat
 
+
 @router.delete("/{category_id}")
 def delete_category(
     category_id: int,
@@ -65,7 +74,6 @@ def delete_category(
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    # אפשר soft delete:
     cat.is_active = False
     session.add(cat)
     session.commit()
