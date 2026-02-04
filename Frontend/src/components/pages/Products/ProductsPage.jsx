@@ -1,18 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import HeroSection from "./HeroSection";
 import AdminProductModal from "./AdminProductModal";
-import { getProducts, createProduct, updateProduct } from "../../../utils/productsApi";
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+  getProductById,
+} from "../../../utils/productsApi";
 import "./products.css";
 import { onInventoryUpdate } from "../../../utils/inventoryBus";
 import { downloadProductsPdf } from "../../../utils/exportApi";
+import toast from "react-hot-toast";
+import { getErrorText } from "../../../utils/toastText";
 
 const RECOMMENDED_BADGES = new Set(["recommended", "popular", "featured"]);
 
 export default function ProductsPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const openedEditRef = useRef(null);
 
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
@@ -107,7 +115,9 @@ export default function ProductsPage() {
     try {
       if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payload);
-        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        setProducts((prev) =>
+          prev.map((p) => (p.id === updated.id ? updated : p))
+        );
       } else {
         const created = await createProduct(payload);
         setProducts((prev) => [created, ...prev]);
@@ -119,6 +129,27 @@ export default function ProductsPage() {
       alert(e?.response?.data?.detail || "Save failed");
     }
   };
+
+  useEffect(() => {
+    const editId = location.state?.editProductId;
+    if (!editId) return;
+    if (!isAdmin) return;
+
+    if (openedEditRef.current === editId) return;
+    openedEditRef.current = editId;
+
+    (async () => {
+      try {
+        const data = await getProductById(editId);
+        openEdit(data);
+
+        navigate("/products" + location.search, { replace: true, state: null });
+      } catch (e) {
+        toast.error(getErrorText(e, "Failed to load product"));
+        navigate("/products" + location.search, { replace: true, state: null });
+      }
+    })();
+  }, [location.state, isAdmin, navigate, location.search]);
 
   return (
     <>
@@ -147,7 +178,11 @@ export default function ProductsPage() {
                 + Add product
               </button>
 
-              <button className="admin-add" onClick={downloadProductsPdf} type="button">
+              <button
+                className="admin-add"
+                onClick={downloadProductsPdf}
+                type="button"
+              >
                 Export Products PDF
               </button>
             </div>
@@ -166,13 +201,17 @@ export default function ProductsPage() {
 
         <div className="products-grid">
           {loading
-            ? Array.from({ length: 6 }).map((_, i) => <div className="p-skel" key={i} />)
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div className="p-skel" key={i} />
+              ))
             : shown.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
                   isAdmin={isAdmin}
-                  onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
+                  onDeleted={(id) =>
+                    setProducts((prev) => prev.filter((x) => x.id !== id))
+                  }
                   onEdit={openEdit}
                 />
               ))}

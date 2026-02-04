@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "../../../assets/auth.css";
 import "./nav.css";
@@ -16,6 +16,14 @@ const Navigation = () => {
 
   const [search, setSearch] = useState(urlSearch);
   const [me, setMe] = useState(null);
+
+  const isAdmin = useMemo(() => {
+    try {
+      return !!JSON.parse(localStorage.getItem("user") || "null")?.is_admin;
+    } catch {
+      return false;
+    }
+  }, [me]);
 
   useEffect(() => {
     setSearch(urlSearch);
@@ -45,10 +53,10 @@ const Navigation = () => {
         headers: { apiKey: APIKEY },
       });
       setMe(res.data);
-      localStorage.setItem("user", JSON.stringify(res.data)); // ✅ חדש
+      localStorage.setItem("user", JSON.stringify(res.data));
     } catch {
       setMe(null);
-      localStorage.removeItem("user"); // ✅ חדש
+      localStorage.removeItem("user");
     }
   };
 
@@ -101,23 +109,16 @@ const Navigation = () => {
           Personalized Gifts
         </Link>
 
-        {(() => {
-          try {
-            const user = JSON.parse(localStorage.getItem("user"));
-            return user?.is_admin ? (
-              <>
-                <Link to="/admin/carts" className="nav__link">
-                  Admin Carts
-                </Link>
-                <Link to="/admin/users" className="nav__link">
-                  Admin Users
-                </Link>
-              </>
-            ) : null;
-          } catch {
-            return null;
-          }
-        })()}
+        {isAdmin ? (
+          <>
+            <Link to="/admin/carts" className="nav__link">
+              Admin Carts
+            </Link>
+            <Link to="/admin/users" className="nav__link">
+              Admin Users
+            </Link>
+          </>
+        ) : null}
 
         <input
           className="nav__search"
@@ -129,24 +130,24 @@ const Navigation = () => {
       </div>
 
       <div className="nav__left">
-        {me && (
-          <span className="nav__hello">
-            👋 Hello <strong>{me.first_name}</strong>
-          </span>
-        )}
+        <span className="nav__hello">
+          👋 Hello <strong>{me.first_name}</strong>
+        </span>
 
-        {me && (
-          <button className="nav__btn" onClick={handleLogout}>
-            LOG OUT
-          </button>
-        )}
+        <button className="nav__btn" onClick={handleLogout}>
+          LOG OUT
+        </button>
 
-        <Link className="nav__icon" to="/cart">
-          🛒
-        </Link>
-        <Link to="/favorites" className="nav__iconLink" title="Favorites">
-          ❤️
-        </Link>
+        {!isAdmin && (
+          <>
+            <Link className="nav__icon" to="/cart" title="Cart">
+              🛒
+            </Link>
+            <Link to="/favorites" className="nav__iconLink" title="Favorites">
+              ❤️
+            </Link>
+          </>
+        )}
       </div>
     </nav>
   );

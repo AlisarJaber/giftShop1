@@ -46,10 +46,6 @@ def on_startup():
 def root():
     return {"status": "ok"}
 
-
-# =========================
-# ROUTES
-# =========================
 app.include_router(auth_router, dependencies=[Depends(verify_api_key)])
 app.include_router(products_router, dependencies=[Depends(verify_api_key)])
 app.include_router(favorites_router, dependencies=[Depends(verify_api_key)])
@@ -61,12 +57,6 @@ app.include_router(uploads_router, dependencies=[Depends(verify_api_key)])
 app.include_router(export_router, dependencies=[Depends(verify_api_key)])  # ✅ PDF
 app.include_router(admin_users_router, dependencies=[Depends(verify_api_key)])  # ✅ ADMIN USERS
 
-# =========================
-# STATIC FILES
-# =========================
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# =========================
-# SOCKET.IO (DO NOT OVERRIDE app)
-# =========================
 asgi_app = socketio.ASGIApp(sio, app)
