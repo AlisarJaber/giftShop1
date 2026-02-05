@@ -1,8 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import "../../../assets/auth.css";
 import "./nav.css";
+import { downloadProductsPdf } from "../../../utils/exportApi";
 
 const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
@@ -17,20 +18,15 @@ const Navigation = () => {
   const [search, setSearch] = useState(urlSearch);
   const [me, setMe] = useState(null);
 
-  // ✅ helper: first letter fallback
+  const [adminOpen, setAdminOpen] = useState(false);
+  const adminWrapRef = useRef(null);
+
   const initialLetter = useMemo(() => {
     const name = (me?.first_name || "").trim();
     return name ? name[0].toUpperCase() : "?";
   }, [me]);
-
-  // ✅ profile image url (supports different field names just in case)
   const profileUrl = useMemo(() => {
-    return (
-      me?.image_url ||
-      me?.profile_image_url ||
-      me?.avatar_url ||
-      ""
-    );
+    return me?.image_url || me?.profile_image_url || me?.avatar_url || "";
   }, [me]);
 
   const isAdmin = useMemo(() => {
@@ -102,6 +98,30 @@ const Navigation = () => {
     navigate("/login", { replace: true });
   };
 
+  useEffect(() => {
+    if (!adminOpen) return;
+
+    const onDown = (e) => {
+      if (!adminWrapRef.current) return;
+      if (!adminWrapRef.current.contains(e.target)) setAdminOpen(false);
+    };
+
+    const onKey = (e) => {
+      if (e.key === "Escape") setAdminOpen(false);
+    };
+
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [adminOpen]);
+
+  useEffect(() => {
+    setAdminOpen(false);
+  }, [location.pathname]);
+
   const hideOnAuthPages =
     location.pathname === "/login" || location.pathname === "/signup";
 
@@ -124,16 +144,65 @@ const Navigation = () => {
         <Link className="nav__link" to="/personal">
           Personalized Gifts
         </Link>
-
         {isAdmin ? (
-          <>
-            <Link to="/admin/carts" className="nav__link">
-              Admin Carts
-            </Link>
-            <Link to="/admin/users" className="nav__link">
-              Admin Users
-            </Link>
-          </>
+          <div className="nav__dropdown" ref={adminWrapRef}>
+            <button
+              type="button"
+              className={`nav__link nav__linkBtn ${adminOpen ? "active" : ""}`}
+              onClick={() => setAdminOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={adminOpen}
+            >
+              Admin <span className={`nav__chev ${adminOpen ? "open" : ""}`}>▾</span>
+          </button>
+
+
+            {adminOpen && (
+              <div className="nav__menu" role="menu">
+                <Link
+                  to="/admin/carts"
+                  className="nav__menuItem"
+                  role="menuitem"
+                  onClick={() => setAdminOpen(false)}
+                >
+                  Admin Carts
+                </Link>
+
+                <Link
+                  to="/admin/users"
+                  className="nav__menuItem"
+                  role="menuitem"
+                  onClick={() => setAdminOpen(false)}
+                >
+                  Admin Users
+                </Link>
+
+                <button
+                  type="button"
+                  className="nav__menuItem nav__menuBtn"
+                  role="menuitem"
+                  onClick={() => {
+                    setAdminOpen(false);
+                    downloadProductsPdf();
+                  }}
+                >
+                  Export Products PDF
+                </button>
+
+                <button
+                  type="button"
+                  className="nav__menuItem nav__menuBtn"
+                  role="menuitem"
+                  onClick={() => {
+                    setAdminOpen(false);
+                    navigate("/admin/audit-logs");
+                  }}
+                >
+                  Audit Logs
+                </button>
+              </div>
+            )}
+          </div>
         ) : null}
 
         <input
@@ -146,7 +215,6 @@ const Navigation = () => {
       </div>
 
       <div className="nav__left">
-        {/* ✅ avatar + hello */}
         <div className="nav__user">
           {profileUrl ? (
             <img
@@ -154,7 +222,6 @@ const Navigation = () => {
               src={profileUrl}
               alt="profile"
               onError={(e) => {
-                // אם URL שבור, נוריד תמונה ונציג fallback
                 e.currentTarget.style.display = "none";
               }}
             />
