@@ -12,10 +12,6 @@ const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const params = new URLSearchParams(location.search);
-  const urlSearch = params.get("search") || "";
-
-  const [search, setSearch] = useState(urlSearch);
   const [me, setMe] = useState(null);
 
   const [adminOpen, setAdminOpen] = useState(false);
@@ -36,21 +32,6 @@ const Navigation = () => {
       return false;
     }
   }, [me]);
-
-  useEffect(() => {
-    setSearch(urlSearch);
-  }, [urlSearch]);
-
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearch(value);
-
-    const next = new URLSearchParams(location.search);
-    if (value.trim()) next.set("search", value);
-    else next.delete("search");
-
-    navigate(`/products?${next.toString()}`, { replace: true });
-  };
 
   const loadMe = async () => {
     const token = localStorage.getItem("token");
@@ -204,14 +185,6 @@ const Navigation = () => {
             )}
           </div>
         ) : null}
-
-        <input
-          className="nav__search"
-          type="text"
-          placeholder="Search products..."
-          value={search}
-          onChange={handleSearchChange}
-        />
       </div>
 
       <div className="nav__left">
