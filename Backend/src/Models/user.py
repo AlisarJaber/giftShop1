@@ -13,6 +13,9 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True)
     hashed_password: str
 
+    # ✅ optional profile image url
+    image_url: Optional[str] = Field(default=None)
+
     is_admin: bool = Field(default=False)
 
     is_blocked: bool = Field(default=False)

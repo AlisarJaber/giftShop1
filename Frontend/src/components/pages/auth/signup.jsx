@@ -5,6 +5,9 @@ import { http } from "../../../utils/http";
 import { toast } from "react-hot-toast";
 import { getErrorText } from "../../../utils/toastText";
 
+// ✅ same upload util you already have
+import { uploadImage } from "../../../utils/singleApi";
+
 /* =========================
    Password Validation
    ========================= */
@@ -32,6 +35,45 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // ✅ profile image states
+  const [profileImageUrl, setProfileImageUrl] = useState(""); // URL saved to DB
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const [selectedFileName, setSelectedFileName] = useState("");
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadErr("");
+      setUploading(true);
+      setSelectedFileName(file.name);
+
+      const url = await uploadImage(file);
+      setProfileImageUrl(url);
+
+      toast.success("Profile image uploaded ✅");
+    } catch (err) {
+      console.error("Image upload failed", err);
+      setUploadErr("Upload failed. Please try again.");
+      toast.error("Upload failed. Please try again.");
+      setProfileImageUrl("");
+      setSelectedFileName("");
+    } finally {
+      setUploading(false);
+      // מאפשר לבחור שוב אותו קובץ אם רוצים
+      event.target.value = "";
+    }
+  };
+
+  const clearImage = () => {
+    if (uploading) return;
+    setProfileImageUrl("");
+    setSelectedFileName("");
+    setUploadErr("");
+  };
+
   const sendData = async (event) => {
     event.preventDefault();
 
@@ -42,12 +84,18 @@ const Signup = () => {
       return;
     }
 
+    if (uploading) {
+      toast.error("Please wait for the image upload to finish.");
+      return;
+    }
+
     try {
       const res = await http.post("/auth/signup", {
         first_name,
         last_name,
         email,
         password,
+        image_url: profileImageUrl || null, // ✅ send to backend
       });
 
       if (res?.data?.access_token) {
@@ -62,7 +110,6 @@ const Signup = () => {
 
       toast.success("Account created successfully 🎉");
       navigate("/products", { replace: true });
-
     } catch (err) {
       toast.error(getErrorText(err, "Signup failed. Please try again."));
     }
@@ -77,9 +124,7 @@ const Signup = () => {
         </div>
 
         <div className="welcome">Welcome</div>
-        <div className="subtitle">
-          To enter the store you need to sign up
-        </div>
+        <div className="subtitle">To enter the store you need to sign up</div>
 
         <div className="auth-tabs">
           <Link to="/signup" className="auth-tab active">
@@ -132,9 +177,9 @@ const Signup = () => {
             <label>Password</label>
             <div className="password-rules">
               <div className="password-hint">
-                must be at least 8 characters, include a capital letter and a special character.
+                Must be at least 8 characters, include a capital letter and a
+                special character.
               </div>
-
             </div>
 
             <div className="input-wrap">
@@ -148,7 +193,56 @@ const Signup = () => {
             </div>
           </div>
 
-          <button className="auth-btn" type="submit">
+          {/* ✅ Optional profile image */}
+          <div className="field">
+            <label>Profile image (optional)</label>
+
+            <div className="auth-fileRow">
+              <label
+                className={`auth-fileBtn ${uploading ? "is-disabled" : ""}`}
+              >
+                {uploading ? "Uploading..." : "Choose file"}
+                <input
+                  className="auth-fileHidden"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                />
+              </label>
+
+              <div className="auth-fileName">
+                {profileImageUrl
+                  ? "Image selected"
+                  : selectedFileName
+                  ? selectedFileName
+                  : "No file chosen"}
+              </div>
+
+              {profileImageUrl ? (
+                <button
+                  type="button"
+                  className="auth-fileClear"
+                  onClick={clearImage}
+                  aria-label="Remove image"
+                  title="Remove image"
+                  disabled={uploading}
+                >
+                  ✕
+                </button>
+              ) : null}
+            </div>
+
+            {uploadErr ? <div className="auth-fileError">{uploadErr}</div> : null}
+
+            {profileImageUrl ? (
+              <div className="auth-imagePreview">
+                <img src={profileImageUrl} alt="profile preview" />
+              </div>
+            ) : null}
+          </div>
+
+          <button className="auth-btn" type="submit" disabled={uploading}>
             Submit
           </button>
         </form>

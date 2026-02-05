@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, EmailStr, validator
 
 SPECIAL_CHARS = "!@#$%^&*()_+-=[]{};':\"\\|,.<>/?"
@@ -7,6 +8,9 @@ class UserCreate(BaseModel):
     last_name: str
     email: EmailStr
     password: str
+
+    # ✅ optional profile image url
+    image_url: Optional[str] = None
 
     @validator("password")
     def validate_password(cls, v: str):
@@ -33,6 +37,9 @@ class UserResponse(BaseModel):
     last_name: str
     email: EmailStr
     is_admin: bool
+
+    # ✅ send to frontend
+    image_url: Optional[str] = None
 
 
 class AuthResponse(BaseModel):

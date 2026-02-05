@@ -15,7 +15,8 @@ def create_user(
     last_name: str,
     email: str,
     password: str,
-    is_admin: bool = False
+    is_admin: bool = False,
+    image_url: Optional[str] = None,   # ✅ added
 ) -> User:
     existing = get_user_by_email(session, email)
     if existing:
@@ -26,7 +27,8 @@ def create_user(
         last_name=last_name,
         email=email,
         hashed_password=hash_password(password),
-        is_admin=is_admin
+        is_admin=is_admin,
+        image_url=image_url,           # ✅ save to db
     )
 
     session.add(user)
