@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import "../../../assets/auth.css";
 import "./nav.css";
-import { downloadProductsPdf } from "../../../utils/exportApi";
 
 const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
@@ -14,13 +13,41 @@ const Navigation = () => {
 
   const [me, setMe] = useState(null);
 
-  const [adminOpen, setAdminOpen] = useState(false);
-  const adminWrapRef = useRef(null);
+  // dropdown
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // edit modal
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
+
+  // ✅ password gate modal
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pw, setPw] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwErr, setPwErr] = useState("");
+
+  // edit form (בלי current_password פה יותר)
+  const [form, setForm] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    image_url: "",
+  });
+
+  // upload
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const [fileName, setFileName] = useState("");
+
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const initialLetter = useMemo(() => {
     const name = (me?.first_name || "").trim();
     return name ? name[0].toUpperCase() : "?";
   }, [me]);
+
   const profileUrl = useMemo(() => {
     return me?.image_url || me?.profile_image_url || me?.avatar_url || "";
   }, [me]);
@@ -64,6 +91,15 @@ const Navigation = () => {
     loadMe();
   }, [location.pathname]);
 
+  useEffect(() => {
+    const onDown = (e) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
   const handleLogout = async () => {
     try {
       await axios.post(
@@ -79,29 +115,140 @@ const Navigation = () => {
     navigate("/login", { replace: true });
   };
 
-  useEffect(() => {
-    if (!adminOpen) return;
+  // ✅ במקום לפתוח ישר edit: פותחים password gate
+  const openEdit = () => {
+    if (!me) return;
+    setMenuOpen(false);
 
-    const onDown = (e) => {
-      if (!adminWrapRef.current) return;
-      if (!adminWrapRef.current.contains(e.target)) setAdminOpen(false);
-    };
+    setPwErr("");
+    setPw("");
+    setPwOpen(true);
+  };
 
-    const onKey = (e) => {
-      if (e.key === "Escape") setAdminOpen(false);
-    };
+  // ✅ אימות סיסמה ע"י login (בלי בקאנד חדש)
+  const confirmPassword = async () => {
+    if (pwLoading) return;
 
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [adminOpen]);
+    const password = pw.trim();
+    if (!password) {
+      setPwErr("Please enter your password.");
+      return;
+    }
 
-  useEffect(() => {
-    setAdminOpen(false);
-  }, [location.pathname]);
+    setPwLoading(true);
+    setPwErr("");
+
+    try {
+      // אם הסיסמה נכונה, הבאקנד יחזיר 200 + ירענן cookie
+      await axios.post(
+        `${API}/auth/login`,
+        { email: me.email, password },
+        { withCredentials: true, headers: { apiKey: APIKEY } }
+      );
+
+      // עכשיו פותחים את מודאל העריכה
+      setErrMsg("");
+      setUploadErr("");
+      setUploading(false);
+      setSaving(false);
+      setFileName("");
+
+      setForm({
+        first_name: me.first_name || "",
+        last_name: me.last_name || "",
+        email: me.email || "",
+        image_url: profileUrl || "",
+      });
+
+      setPwOpen(false);
+      setEditOpen(true);
+    } catch (err) {
+      setPwErr(err?.response?.data?.detail || "Wrong password.");
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
+  const uploadImage = async (file) => {
+    const fd = new FormData();
+    fd.append("image_file", file);
+
+    const res = await axios.post(`${API}/api/uploads/image`, fd, {
+      withCredentials: true,
+      headers: { apiKey: APIKEY, "Content-Type": "multipart/form-data" },
+    });
+
+    return res.data?.url || "";
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadErr("");
+      setUploading(true);
+      setFileName(file.name);
+
+      const url = await uploadImage(file);
+      if (!url) throw new Error("NO_URL");
+      set("image_url", url);
+    } catch (err) {
+      console.error("Upload failed", err);
+      setUploadErr("Upload failed. Please try again.");
+      setFileName("");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const submitEdit = async () => {
+    if (saving || uploading) return;
+
+    const first_name = form.first_name.trim();
+    const last_name = form.last_name.trim();
+    const email = form.email.trim();
+    const image_url = (form.image_url || "").trim() || null;
+
+    if (!first_name || !last_name || !email) {
+      setErrMsg("Please fill all fields.");
+      return;
+    }
+
+    setSaving(true);
+    setErrMsg("");
+
+    try {
+      // ✅ עדיין חייבים current_password בבאקנד => נשלח את אותה סיסמה שאושרה
+      // כאן אין לנו אותה כבר, לכן הפתרון הפשוט: נבקש שוב בתוך שמירה? לא.
+      // אז נשמור את הסיסמה שאושרה בסטייט זמני בזמן עריכה:
+      // ✅ נשתמש ב-pw שנשאר בסטייט (לא מוחקים אותו עד סגירת edit)
+      const res = await axios.patch(
+        `${API}/auth/me`,
+        {
+          first_name,
+          last_name,
+          email,
+          image_url,
+          current_password: pw, // ✅ הסיסמה שהוקלדה לפני הכניסה
+        },
+        { withCredentials: true, headers: { apiKey: APIKEY } }
+      );
+
+      setMe(res.data);
+      localStorage.setItem("user", JSON.stringify(res.data));
+      window.dispatchEvent(new Event("auth-change"));
+
+      setEditOpen(false);
+      setPw(""); // ✅ מנקים אחרי הצלחה
+    } catch (err) {
+      console.error("Update failed", err);
+      setErrMsg(err?.response?.data?.detail || "Update failed. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const hideOnAuthPages =
     location.pathname === "/login" || location.pathname === "/signup";
@@ -109,120 +256,292 @@ const Navigation = () => {
   if (!me || hideOnAuthPages) return null;
 
   return (
-    <nav className="nav">
-      <div className="nav__right">
-        <span className="nav__logo">🎁</span>
-        <span className="nav__title">Gift Shop</span>
-      </div>
-
-      <div className="nav__center">
-        <Link className="nav__link" to="/products">
-          Home
-        </Link>
-        <Link className="nav__link" to="/categories">
-          All product
-        </Link>
-        <Link className="nav__link" to="/personal">
-          Personalized Gifts
-        </Link>
-        {isAdmin ? (
-          <div className="nav__dropdown" ref={adminWrapRef}>
-            <button
-              type="button"
-              className={`nav__link nav__linkBtn ${adminOpen ? "active" : ""}`}
-              onClick={() => setAdminOpen((v) => !v)}
-              aria-haspopup="menu"
-              aria-expanded={adminOpen}
-            >
-              Admin <span className={`nav__chev ${adminOpen ? "open" : ""}`}>▾</span>
-          </button>
-
-
-            {adminOpen && (
-              <div className="nav__menu" role="menu">
-                <Link
-                  to="/admin/carts"
-                  className="nav__menuItem"
-                  role="menuitem"
-                  onClick={() => setAdminOpen(false)}
-                >
-                  Admin Carts
-                </Link>
-
-                <Link
-                  to="/admin/users"
-                  className="nav__menuItem"
-                  role="menuitem"
-                  onClick={() => setAdminOpen(false)}
-                >
-                  Admin Users
-                </Link>
-
-                <button
-                  type="button"
-                  className="nav__menuItem nav__menuBtn"
-                  role="menuitem"
-                  onClick={() => {
-                    setAdminOpen(false);
-                    downloadProductsPdf();
-                  }}
-                >
-                  Export Products PDF
-                </button>
-
-                <button
-                  type="button"
-                  className="nav__menuItem nav__menuBtn"
-                  role="menuitem"
-                  onClick={() => {
-                    setAdminOpen(false);
-                    navigate("/admin/audit-logs");
-                  }}
-                >
-                  Audit Logs
-                </button>
-              </div>
-            )}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="nav__left">
-        <div className="nav__user">
-          {profileUrl ? (
-            <img
-              className="nav__avatar"
-              src={profileUrl}
-              alt="profile"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          ) : (
-            <div className="nav__avatarFallback">{initialLetter}</div>
-          )}
-
-          <span className="nav__hello">
-            👋 Hello <strong>{me.first_name}</strong>
-          </span>
+    <>
+      <nav className="nav">
+        <div className="nav__right">
+          <span className="nav__logo">🎁</span>
+          <span className="nav__title">Gift Shop</span>
         </div>
 
-        <button className="nav__btn" onClick={handleLogout}>
-          LOG OUT
-        </button>
+        <div className="nav__center">
+          <Link className="nav__link" to="/products">
+            Home
+          </Link>
+          <Link className="nav__link" to="/categories">
+            All product
+          </Link>
+          <Link className="nav__link" to="/personal">
+            Personalized Gifts
+          </Link>
 
-        {!isAdmin && (
-          <>
-            <Link className="nav__icon" to="/cart" title="Cart">
-              🛒
-            </Link>
-            <Link to="/favorites" className="nav__iconLink" title="Favorites">
-              ❤️
-            </Link>
-          </>
-        )}
-      </div>
-    </nav>
+          {isAdmin ? (
+            <>
+              <Link to="/admin/carts" className="nav__link">
+                Admin Carts
+              </Link>
+              <Link to="/admin/users" className="nav__link">
+                Admin Users
+              </Link>
+            </>
+          ) : null}
+        </div>
+
+        <div className="nav__left" ref={menuRef}>
+          <button
+            type="button"
+            className="nav__profileBtn"
+            onClick={() => setMenuOpen((x) => !x)}
+            title="Account menu"
+          >
+            {profileUrl ? (
+              <img
+                className="nav__avatar"
+                src={profileUrl}
+                alt="profile"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="nav__avatarFallback">{initialLetter}</div>
+            )}
+
+            <span className="nav__hello">
+              👋 Hello <strong>{me.first_name}</strong>
+            </span>
+
+            <span className={`nav__chev ${menuOpen ? "open" : ""}`}>▾</span>
+          </button>
+
+          {menuOpen && (
+            <div className="navMenu">
+              <div className="navMenu__title">Account details</div>
+
+              <div className="navMenu__row">
+                <span className="navMenu__label">Name</span>
+                <span className="navMenu__value">
+                  {me.first_name} {me.last_name}
+                </span>
+              </div>
+
+              <div className="navMenu__row">
+                <span className="navMenu__label">Email</span>
+                <span className="navMenu__value">{me.email}</span>
+              </div>
+
+              <div className="navMenu__actions">
+                <button type="button" className="navMenu__btn" onClick={openEdit}>
+                  Update details
+                </button>
+
+                <button
+                  type="button"
+                  className="navMenu__btn danger"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!isAdmin && (
+            <>
+              <Link className="nav__icon" to="/cart" title="Cart">
+                🛒
+              </Link>
+              <Link to="/favorites" className="nav__iconLink" title="Favorites">
+                ❤️
+              </Link>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* ✅ Password gate modal */}
+      {pwOpen && (
+        <div className="navEdit__backdrop" onClick={() => setPwOpen(false)}>
+          <div
+            className="navEdit__card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="navEdit__head">
+              <div className="navEdit__title">Confirm your password</div>
+              <button
+                type="button"
+                className="navEdit__x"
+                onClick={() => setPwOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="navEdit__body">
+              <label className="navEdit__label">Password</label>
+              <input
+                className="navEdit__input"
+                type="password"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                placeholder="Enter your password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") confirmPassword();
+                }}
+              />
+
+              {pwErr ? <div className="file-error">{pwErr}</div> : null}
+            </div>
+
+            <div className="navEdit__actions">
+              <button
+                type="button"
+                className="navEdit__btn ghost"
+                onClick={() => setPwOpen(false)}
+                disabled={pwLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="navEdit__btn primary"
+                onClick={confirmPassword}
+                disabled={pwLoading}
+              >
+                {pwLoading ? "Checking..." : "Continue"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Edit modal */}
+      {editOpen && (
+        <div className="navEdit__backdrop" onClick={() => setEditOpen(false)}>
+          <div
+            className="navEdit__card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="navEdit__head">
+              <div className="navEdit__title">Update details</div>
+              <button
+                type="button"
+                className="navEdit__x"
+                onClick={() => setEditOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="navEdit__body">
+              <label className="navEdit__label">First name</label>
+              <input
+                className="navEdit__input"
+                value={form.first_name}
+                onChange={(e) => set("first_name", e.target.value)}
+              />
+
+              <label className="navEdit__label">Last name</label>
+              <input
+                className="navEdit__input"
+                value={form.last_name}
+                onChange={(e) => set("last_name", e.target.value)}
+              />
+
+              <label className="navEdit__label">Email</label>
+              <input
+                className="navEdit__input"
+                type="email"
+                value={form.email}
+                onChange={(e) => set("email", e.target.value)}
+              />
+
+              <label className="navEdit__label">Profile image (optional)</label>
+
+              <input
+                className="file-input-hidden"
+                id="profileFile"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={uploading || saving}
+              />
+
+              <div className="file-row">
+                <label
+                  htmlFor="profileFile"
+                  className={`file-btn ${uploading || saving ? "is-disabled" : ""}`}
+                >
+                  Choose file
+                </label>
+                <div className="file-name">
+                  {fileName
+                    ? fileName
+                    : form.image_url
+                    ? "Image selected"
+                    : "No file selected"}
+                </div>
+
+                {form.image_url ? (
+                  <button
+                    type="button"
+                    className="file-clear"
+                    onClick={() => {
+                      set("image_url", "");
+                      setFileName("");
+                      setUploadErr("");
+                    }}
+                    title="Remove image"
+                    disabled={uploading || saving}
+                  >
+                    ✕
+                  </button>
+                ) : null}
+              </div>
+
+              {uploading ? (
+                <div className="file-error" style={{ color: "#7a7a7a" }}>
+                  Uploading image...
+                </div>
+              ) : null}
+
+              {uploadErr ? <div className="file-error">{uploadErr}</div> : null}
+              {errMsg ? <div className="file-error">{errMsg}</div> : null}
+
+              {form.image_url ? (
+                <div className="image-preview">
+                  <img src={form.image_url} alt="preview" />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="navEdit__actions">
+              <button
+                type="button"
+                className="navEdit__btn ghost"
+                onClick={() => setEditOpen(false)}
+                disabled={saving || uploading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="navEdit__btn primary"
+                onClick={submitEdit}
+                disabled={saving || uploading}
+              >
+                {saving ? "Saving..." : uploading ? "Uploading..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

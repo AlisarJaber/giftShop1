@@ -146,6 +146,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  position: relative; /* ✅ כדי שה-dropdown יתמקם נכון */
 }
 
 .nav__icon{
@@ -217,4 +218,334 @@
   color:#c22303;
   border:1px solid rgba(0,0,0,0.12);
   background:#fff;
+}
+
+/* clickable avatar (ישן - נשאר אם עוד מקום משתמש בזה) */
+.nav__avatarBtn{
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav__avatarBtn:focus{
+  outline: 2px solid #c22303;
+  outline-offset: 3px;
+}
+
+/* modal (ישן - נשאר אם עוד מקום משתמש בזה) */
+.navModal__backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.navModal__card{
+  width: min(420px, 92vw);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+
+.navModal__head{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.navModal__title{
+  font-weight: 900;
+  font-size: 16px;
+  color: #2b2623;
+}
+
+.navModal__x{
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  cursor: pointer;
+}
+
+.navModal__body{
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.navModal__row{
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.navModal__label{
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(43,38,35,0.65);
+}
+
+.navModal__value{
+  font-size: 13px;
+  font-weight: 900;
+  color: #2b2623;
+  word-break: break-word;
+}
+
+.navModal__actions{
+  padding: 12px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.navModal__btn{
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(0,0,0,0.14);
+  background: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.navModal__btn.primary{
+  background: #c22303;
+  border-color: #c22303;
+  color: #fff;
+}
+
+.navModal__btn.ghost{
+  background: #fff;
+}
+
+/* ===== Profile button (avatar + hello + arrow) ===== */
+.nav__profileBtn{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 14px;
+}
+
+.nav__profileBtn:hover{
+  background: rgba(0,0,0,0.04);
+}
+
+.nav__profileBtn:focus{
+  outline: 2px solid #c22303;
+  outline-offset: 3px;
+}
+
+.nav__chev{
+  font-size: 14px;
+  opacity: 0.75;
+  transform: translateY(1px);
+  transition: transform .15s ease;
+}
+
+.nav__chev.open{
+  transform: rotate(180deg) translateY(-1px);
+}
+
+/* ===== Dropdown menu ===== */
+.navMenu{
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 280px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.14);
+  padding: 12px;
+  z-index: 9999; /* ✅ מעל הכל בנאב */
+}
+
+.navMenu__title{
+  font-weight: 900;
+  font-size: 14px;
+  color: #2b2623;
+  margin-bottom: 10px;
+}
+
+.navMenu__row{
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.navMenu__row:last-of-type{
+  border-bottom: none;
+}
+
+.navMenu__label{
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(43,38,35,0.6);
+}
+
+.navMenu__value{
+  font-size: 12px;
+  font-weight: 900;
+  color: #2b2623;
+  text-align: right;
+  word-break: break-word;
+}
+
+.navMenu__actions{
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.navMenu__btn{
+  flex: 1;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0,0,0,0.14);
+  background: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.navMenu__btn:hover{filter: brightness(.98);}
+
+.navMenu__btn.danger{
+  border-color: rgba(194,35,3,0.35);
+  color: #c22303;
+}
+
+/* ===== Edit modal ===== */
+.navEdit__backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 20px;
+}
+
+.navEdit__card{
+  width: min(520px, 92vw);
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  overflow: hidden;
+
+  /* ✅ FIX: height + layout so footer stays visible/clickable */
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.navEdit__head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.navEdit__title{
+  font-size: 16px;
+  font-weight: 900;
+  color: #2b2623;
+}
+
+.navEdit__x{
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  cursor: pointer;
+}
+
+.navEdit__body{
+  padding: 16px 18px;
+  display: grid;
+  gap: 10px;
+
+  /* ✅ FIX: only body scrolls */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.navEdit__label{
+  font-size: 12px;
+  font-weight: 800;
+  color: #2b2b2b;
+}
+
+.navEdit__input{
+  width: 100%;
+  border: 1px solid #eee4dc;
+  border-radius: 12px;
+  padding: 12px 12px;
+  outline: none;
+}
+
+.navEdit__input:focus{
+  border-color: #c22303;
+}
+
+.navEdit__actions{
+  padding: 14px 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+
+  /* ✅ FIX: keep above scroll layer + clickable */
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.navEdit__btn{
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(0,0,0,0.14);
+  background: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.navEdit__btn.primary{
+  background: #c22303;
+  border-color: #c22303;
+  color: #fff;
+}
+
+.navEdit__btn.ghost{
+  background: #fff;
+}
+
+/* למובייל – טיפה יותר גובה */
+@media (max-width: 600px) {
+  .navEdit__card { max-height: 92vh; }
 }
