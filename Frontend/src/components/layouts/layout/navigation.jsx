@@ -17,6 +17,22 @@ const Navigation = () => {
   const [search, setSearch] = useState(urlSearch);
   const [me, setMe] = useState(null);
 
+  // ✅ helper: first letter fallback
+  const initialLetter = useMemo(() => {
+    const name = (me?.first_name || "").trim();
+    return name ? name[0].toUpperCase() : "?";
+  }, [me]);
+
+  // ✅ profile image url (supports different field names just in case)
+  const profileUrl = useMemo(() => {
+    return (
+      me?.image_url ||
+      me?.profile_image_url ||
+      me?.avatar_url ||
+      ""
+    );
+  }, [me]);
+
   const isAdmin = useMemo(() => {
     try {
       return !!JSON.parse(localStorage.getItem("user") || "null")?.is_admin;
@@ -130,9 +146,26 @@ const Navigation = () => {
       </div>
 
       <div className="nav__left">
-        <span className="nav__hello">
-          👋 Hello <strong>{me.first_name}</strong>
-        </span>
+        {/* ✅ avatar + hello */}
+        <div className="nav__user">
+          {profileUrl ? (
+            <img
+              className="nav__avatar"
+              src={profileUrl}
+              alt="profile"
+              onError={(e) => {
+                // אם URL שבור, נוריד תמונה ונציג fallback
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div className="nav__avatarFallback">{initialLetter}</div>
+          )}
+
+          <span className="nav__hello">
+            👋 Hello <strong>{me.first_name}</strong>
+          </span>
+        </div>
 
         <button className="nav__btn" onClick={handleLogout}>
           LOG OUT
