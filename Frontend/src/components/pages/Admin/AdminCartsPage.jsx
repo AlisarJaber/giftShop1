@@ -54,8 +54,13 @@ export default function AdminCartsPage() {
                 <div className="cart-row-top">
                   <div>
                     <div className="cart-row-title">
-                      Cart #{c.id} • User #{c.user_id}
+                        Cart #{c.id} • {c.user_name || `User #${c.user_id}`}
                     </div>
+
+                    {c.user_email && (
+                    <div className="cart-row-user-email">{c.user_email}</div>
+                    )}
+
                     <div className="cart-row-meta">
                       Status:{" "}
                       <span className={c.is_paid ? "paid" : "open"}>
