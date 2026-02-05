@@ -10,7 +10,7 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
   const [categories, setCategories] = useState([]);
   const [catError, setCatError] = useState("");
 
-  // Upload states
+  // Upload states ---
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
 
