@@ -29,7 +29,6 @@ export default function ProductsPage() {
   const [editInitial, setEditInitial] = useState(null);
   const [user, setUser] = useState(null);
 
-  // ✅ Search input state (controlled) + sync from URL
   const params = new URLSearchParams(location.search);
   const urlSearch = params.get("search") || "";
   const [searchInput, setSearchInput] = useState(urlSearch);
@@ -46,7 +45,8 @@ export default function ProductsPage() {
     if (value.trim()) next.set("search", value);
     else next.delete("search");
 
-    navigate(`/products?${next.toString()}`, { replace: true });
+    const qs = next.toString();
+    navigate(qs ? `/products?${qs}` : "/products", { replace: true });
   };
 
   useEffect(() => {
@@ -90,7 +90,6 @@ export default function ProductsPage() {
     return off;
   }, [user, load]);
 
-  // ✅ search value used for filtering (from URL)
   const search = useMemo(() => {
     const p = new URLSearchParams(location.search);
     return (p.get("search") || "").trim().toLowerCase();
@@ -135,7 +134,9 @@ export default function ProductsPage() {
     try {
       if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payload);
-        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        setProducts((prev) =>
+          prev.map((p) => (p.id === updated.id ? updated : p))
+        );
       } else {
         const created = await createProduct(payload);
         setProducts((prev) => [created, ...prev]);
@@ -148,7 +149,6 @@ export default function ProductsPage() {
     }
   };
 
-  // ✅ Open edit modal from navigation state (existing)
   useEffect(() => {
     const editId = location.state?.editProductId;
     if (!editId) return;
@@ -184,7 +184,6 @@ export default function ProductsPage() {
               {search ? "Results by name / badge" : "Our most popular gifts"}
             </p>
 
-            {/* ✅ Search bar moved from NAV to page */}
             <input
               className="page-search"
               style={{ marginTop: 14, maxWidth: 360 }}
@@ -202,29 +201,9 @@ export default function ProductsPage() {
           </div>
 
           {isAdmin && (
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                alignItems: "center",
-                flexWrap: "wrap",
-                justifyContent: "flex-end",
-              }}
-            >
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <button className="admin-add" onClick={openAdd} type="button">
                 + Add product
-              </button>
-
-              <button className="admin-add" onClick={downloadProductsPdf} type="button">
-                Export Products PDF
-              </button>
-
-              <button
-                className="admin-add"
-                onClick={() => navigate("/admin/audit-logs")}
-                type="button"
-              >
-                Audit Logs
               </button>
             </div>
           )}
@@ -242,7 +221,9 @@ export default function ProductsPage() {
 
         <div className="products-grid">
           {loading
-            ? Array.from({ length: 6 }).map((_, i) => <div className="p-skel" key={i} />)
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div className="p-skel" key={i} />
+              ))
             : shown.map((p) => (
                 <ProductCard
                   key={p.id}

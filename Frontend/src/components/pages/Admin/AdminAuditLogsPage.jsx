@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { getErrorText } from "../../../utils/toastText";
 import { getAuditLogs } from "../../../utils/auditLogsApi";
 import "./adminAuditLogs.css";
+import BackButton from "../../ui/BackButton";
 
 function formatTime(iso) {
   try {
@@ -42,6 +43,7 @@ export default function AdminAuditLogsPage() {
 
   return (
     <div className="audit-wrap">
+        <BackButton />
       <h1 className="audit-title">Audit Logs (Admin)</h1>
       <p className="audit-sub">All recent actions in the system</p>
 
