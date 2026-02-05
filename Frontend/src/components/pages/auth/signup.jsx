@@ -2,8 +2,27 @@ import { useState } from "react";
 import "../../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../../../utils/http";
-import { toast } from "react-hot-toast"; // ✅ הוספה
-import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
+import { toast } from "react-hot-toast";
+import { getErrorText } from "../../../utils/toastText";
+
+/* =========================
+   Password Validation
+   ========================= */
+const validatePassword = (password) => {
+  if (password.length < 8) {
+    return "Password must be at least 8 characters";
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return "Password must include at least one capital letter";
+  }
+
+  if (!/[!@#$%^&*()_\-+=[\]{};':\"\\|,.<>/?]/.test(password)) {
+    return "Password must include at least one special character";
+  }
+
+  return null;
+};
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -16,6 +35,13 @@ const Signup = () => {
   const sendData = async (event) => {
     event.preventDefault();
 
+    // ✅ Frontend password validation
+    const pwdError = validatePassword(password);
+    if (pwdError) {
+      toast.error(pwdError);
+      return;
+    }
+
     try {
       const res = await http.post("/auth/signup", {
         first_name,
@@ -27,6 +53,7 @@ const Signup = () => {
       if (res?.data?.access_token) {
         localStorage.setItem("token", res.data.access_token);
       }
+
       if (res?.data?.user) {
         localStorage.setItem("user", JSON.stringify(res.data.user));
       }
@@ -34,12 +61,10 @@ const Signup = () => {
       window.dispatchEvent(new Event("auth-change"));
 
       toast.success("Account created successfully 🎉");
-
       navigate("/products", { replace: true });
+
     } catch (err) {
-      toast.error(
-        getErrorText(err, "Signup failed. Please try again.")
-      );
+      toast.error(getErrorText(err, "Signup failed. Please try again."));
     }
   };
 
@@ -51,7 +76,7 @@ const Signup = () => {
           <span>🎁</span>
         </div>
 
-        <div className="welcome">welcome</div>
+        <div className="welcome">Welcome</div>
         <div className="subtitle">
           To enter the store you need to sign up
         </div>
@@ -94,6 +119,7 @@ const Signup = () => {
             <label>Email</label>
             <div className="input-wrap">
               <input
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
@@ -104,6 +130,13 @@ const Signup = () => {
 
           <div className="field">
             <label>Password</label>
+            <div className="password-rules">
+              <div className="password-hint">
+                must be at least 8 characters, include a capital letter and a special character.
+              </div>
+
+            </div>
+
             <div className="input-wrap">
               <input
                 type="password"
