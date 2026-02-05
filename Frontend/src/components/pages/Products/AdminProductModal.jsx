@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
 import { getCategories } from "../../../utils/categoriesApi";
-import toast from "react-hot-toast"; // ✅ הוספה
-import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
+import toast from "react-hot-toast";
+import { getErrorText } from "../../../utils/toastText";
+
+// ⬇️ שימי לב: עדכני את הנתיב לפי איפה שהפונקציה אצלך נמצאת
+import { uploadImage } from "../../../utils/singleApi";
 
 export default function AdminProductModal({ open, onClose, initial, onSubmit }) {
   const [categories, setCategories] = useState([]);
   const [catError, setCatError] = useState("");
+
+  // Upload states
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
 
   const [form, setForm] = useState({
     name: "",
     price: 0,
     quantity: 0,
     badge: "",
-    image_url: "",
+    image_url: "", // נשמר פה ה-URL שמתקבל אחרי upload
     description: "",
     category_id: "",
   });
@@ -31,6 +38,10 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
 
   useEffect(() => {
     if (!open) return;
+
+    // reset upload status on open
+    setUploading(false);
+    setUploadErr("");
 
     if (initial) {
       setForm({
@@ -59,10 +70,39 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
+  // ✅ זה בדיוק כמו הפונקציה שלך, רק מחובר ל-form.image_url
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadErr("");
+      setUploading(true);
+
+      const url = await uploadImage(file);
+
+      set("image_url", url); // שומר URL בתוך הטופס
+      toast.success("Image uploaded ✅");
+    } catch (err) {
+      console.error("Image upload failed", err);
+      setUploadErr("Upload failed. Please try again.");
+      toast.error("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+      // מאפשר לבחור שוב אותו קובץ אם רוצים
+      event.target.value = "";
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
 
-    // ✅ ולידציות פרונט מינימליות (לא מוחק כלום, רק בודק לפני שליחה)
+    if (uploading) {
+      toast.error("Please wait for the image upload to finish.");
+      return;
+    }
+
+    // ✅ ולידציות פרונט מינימליות
     const name = form.name.trim();
     const priceNum = Number(form.price);
     const qtyNum = Number(form.quantity || 0);
@@ -88,9 +128,10 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
       return;
     }
 
-    const imageUrl = form.image_url.trim();
+    // image_url הוא optional — אבל אם קיים נוודא שהוא באמת URL
+    const imageUrl = (form.image_url || "").trim();
     if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
-      toast.error("Image URL must start with http:// or https://");
+      toast.error("Image upload returned an invalid URL.");
       return;
     }
 
@@ -106,7 +147,9 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
 
     try {
       await onSubmit(payload);
-      toast.success(initial ? "Product updated successfully ✅" : "Product created successfully 🎉");
+      toast.success(
+        initial ? "Product updated successfully ✅" : "Product created successfully 🎉"
+      );
     } catch (err) {
       toast.error(getErrorText(err, "Save failed. Please try again."));
     }
@@ -176,11 +219,40 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
             onChange={(e) => set("badge", e.target.value)}
           />
 
-          <label>Image URL (optional)</label>
+          {/* ✅ במקום Image URL */}
+          <label>Product image (optional)</label>
           <input
-            value={form.image_url}
-            onChange={(e) => set("image_url", e.target.value)}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            disabled={uploading}
           />
+
+          {/* מצב upload + הודעה */}
+          <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
+            {uploading ? "Uploading image..." : null}
+            {uploadErr ? (
+              <div style={{ color: "#b00020", marginTop: 4 }}>{uploadErr}</div>
+            ) : null}
+
+            {/* מציג אם כבר יש תמונה (ב-edit או אחרי upload) */}
+            {form.image_url ? (
+              <div style={{ marginTop: 6 }}>
+                <div style={{ marginBottom: 6 }}>Current image:</div>
+                <img
+                  src={form.image_url}
+                  alt="product"
+                  style={{
+                    width: 120,
+                    height: 120,
+                    objectFit: "cover",
+                    borderRadius: 10,
+                    border: "1px solid #eee",
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
 
           <label>Description (optional)</label>
           <textarea
@@ -193,8 +265,8 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
             <button type="button" className="btn-ghost" onClick={onClose}>
               Cancel
             </button>
-            <button className="btn-primary" type="submit">
-              Save
+            <button className="btn-primary" type="submit" disabled={uploading}>
+              {uploading ? "Uploading..." : "Save"}
             </button>
           </div>
         </form>
