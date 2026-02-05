@@ -13,7 +13,8 @@ from src.Routes.sinCategory import router as single_category_router
 from src.Routes.sinProduct import router as single_product_router
 from src.Routes.uploads import router as uploads_router
 from src.Routes.export_pdf import router as export_router
-from src.Routes.admin_users import router as admin_users_router  # ✅ NEW
+from src.Routes.admin_users import router as admin_users_router  
+from src.Routes.audit_logs import router as audit_logs_router
 
 from src.Utils.api_key import verify_api_key
 
@@ -54,9 +55,9 @@ app.include_router(categoryRouter, dependencies=[Depends(verify_api_key)])
 app.include_router(single_category_router, dependencies=[Depends(verify_api_key)])
 app.include_router(single_product_router, dependencies=[Depends(verify_api_key)])
 app.include_router(uploads_router, dependencies=[Depends(verify_api_key)])
-app.include_router(export_router, dependencies=[Depends(verify_api_key)])  # ✅ PDF
-app.include_router(admin_users_router, dependencies=[Depends(verify_api_key)])  # ✅ ADMIN USERS
-
+app.include_router(export_router, dependencies=[Depends(verify_api_key)]) 
+app.include_router(admin_users_router, dependencies=[Depends(verify_api_key)])
+app.include_router(audit_logs_router, dependencies=[Depends(verify_api_key)])
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 asgi_app = socketio.ASGIApp(sio, app)

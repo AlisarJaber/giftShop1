@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { connectSocket, disconnectSocket } from "../utils/socket";
 import { emitInventoryUpdate } from "../utils/inventoryBus";
+import { emitAdminEvent } from "../utils/adminBus"; 
 
 function getUser() {
   try {
@@ -10,16 +11,24 @@ function getUser() {
   }
 }
 
-export default function SocketBridge() {
+const INVENTORY_EVENTS = new Set(["item_added", "item_removed", "inventory_update"]);
+const ADMIN_EVENTS = new Set(["audit_log_added", "cart_paid", "cart_updated"]); 
 
+export default function SocketBridge() {
   useEffect(() => {
     const user = getUser();
     if (!user) return;
 
     connectSocket((data) => {
       const evt = data?.event;
-      if (evt === "item_added" || evt === "item_removed" || evt === "inventory_update") {
+
+      if (INVENTORY_EVENTS.has(evt)) {
         emitInventoryUpdate({ evt, ...data });
+        return;
+      }
+
+      if (ADMIN_EVENTS.has(evt)) {
+        emitAdminEvent({ evt, ...data });
       }
     });
 
@@ -35,8 +44,14 @@ export default function SocketBridge() {
 
       connectSocket((data) => {
         const evt = data?.event;
-        if (evt === "item_added" || evt === "item_removed" || evt === "inventory_update") {
+
+        if (INVENTORY_EVENTS.has(evt)) {
           emitInventoryUpdate({ evt, ...data });
+          return;
+        }
+
+        if (ADMIN_EVENTS.has(evt)) {
+          emitAdminEvent({ evt, ...data });
         }
       });
     };
