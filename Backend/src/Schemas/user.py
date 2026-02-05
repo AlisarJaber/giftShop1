@@ -3,13 +3,14 @@ from pydantic import BaseModel, EmailStr, validator
 
 SPECIAL_CHARS = "!@#$%^&*()_+-=[]{};':\"\\|,.<>/?"
 
+
 class UserCreate(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
     password: str
 
-    # ✅ optional profile image url
+    # ✅ optional profile image
     image_url: Optional[str] = None
 
     @validator("password")
@@ -31,6 +32,15 @@ class UserLogin(BaseModel):
     password: str
 
 
+# ✅ NEW: payload לעדכון פרטי משתמש (מחייב סיסמה)
+class UserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    image_url: Optional[str] = None
+    current_password: str
+
+
 class UserResponse(BaseModel):
     id: int
     first_name: str
@@ -38,7 +48,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     is_admin: bool
 
-    # ✅ send to frontend
+    # ✅ נשלח לפרונט
     image_url: Optional[str] = None
 
 
