@@ -95,5 +95,32 @@
   gap: 6px;
 }
 
+/* ===== User avatar near hello ===== */
+.nav__user{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
 
+.nav__avatar{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  object-fit:cover;
+  border:1px solid rgba(0,0,0,0.12);
+  background:#fff;
+}
 
+.nav__avatarFallback{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  font-size:14px;
+  color:#c22303;
+  border:1px solid rgba(0,0,0,0.12);
+  background:#fff;
+}
