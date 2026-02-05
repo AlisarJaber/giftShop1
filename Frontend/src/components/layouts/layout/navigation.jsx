@@ -11,10 +11,6 @@ const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const params = new URLSearchParams(location.search);
-  const urlSearch = params.get("search") || "";
-
-  const [search, setSearch] = useState(urlSearch);
   const [me, setMe] = useState(null);
 
   // ✅ helper: first letter fallback
@@ -25,12 +21,7 @@ const Navigation = () => {
 
   // ✅ profile image url (supports different field names just in case)
   const profileUrl = useMemo(() => {
-    return (
-      me?.image_url ||
-      me?.profile_image_url ||
-      me?.avatar_url ||
-      ""
-    );
+    return me?.image_url || me?.profile_image_url || me?.avatar_url || "";
   }, [me]);
 
   const isAdmin = useMemo(() => {
@@ -40,21 +31,6 @@ const Navigation = () => {
       return false;
     }
   }, [me]);
-
-  useEffect(() => {
-    setSearch(urlSearch);
-  }, [urlSearch]);
-
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearch(value);
-
-    const next = new URLSearchParams(location.search);
-    if (value.trim()) next.set("search", value);
-    else next.delete("search");
-
-    navigate(`/products?${next.toString()}`, { replace: true });
-  };
 
   const loadMe = async () => {
     const token = localStorage.getItem("token");
@@ -135,14 +111,6 @@ const Navigation = () => {
             </Link>
           </>
         ) : null}
-
-        <input
-          className="nav__search"
-          type="text"
-          placeholder="Search products..."
-          value={search}
-          onChange={handleSearchChange}
-        />
       </div>
 
       <div className="nav__left">
@@ -154,7 +122,6 @@ const Navigation = () => {
               src={profileUrl}
               alt="profile"
               onError={(e) => {
-                // אם URL שבור, נוריד תמונה ונציג fallback
                 e.currentTarget.style.display = "none";
               }}
             />

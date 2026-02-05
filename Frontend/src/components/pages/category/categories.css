@@ -255,3 +255,74 @@
   background: #c22303;
   color: white;
 }
+
+/* =========================
+   NEW: Filters row styling (Search moved here)
+   ========================= */
+.cat-filters{
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cat-filterInput{
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.14);
+  background: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.cat-filterInput:focus{
+  outline: none;
+  border-color: rgba(194, 35, 3, 0.55);
+  box-shadow: 0 0 0 3px rgba(194, 35, 3, 0.10);
+}
+
+.cat-filterSelect{
+  cursor: pointer;
+}
+
+.cat-filterSearch{
+  min-width: 240px;
+  max-width: 320px;
+  flex: 1;
+}
+
+.cat-filterCheck{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 800;
+}
+
+.cat-filterCount{
+  margin-left: auto;
+  opacity: 0.8;
+  font-weight: 900;
+}
+
+@media (max-width: 650px){
+  .cat-filterCount{ width: 100%; margin-left: 0; }
+  .cat-filterSearch{ max-width: 100%; }
+}
+
+/* ✅ Reusable search input style (so we don't depend on nav.css) */
+.page-search{
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.14);
+  background: #fff;
+  font-weight: 700;
+  outline: none;
+}
+
+.page-search:focus{
+  border-color: rgba(194, 35, 3, 0.55);
+  box-shadow: 0 0 0 3px rgba(194, 35, 3, 0.10);
+}

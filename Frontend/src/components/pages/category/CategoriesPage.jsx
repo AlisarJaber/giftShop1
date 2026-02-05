@@ -7,8 +7,8 @@ import AdminProductModal from "../Products/AdminProductModal";
 import ProductCard from "../Products/ProductCard";
 import { createProduct, updateProduct } from "../../../utils/productsApi";
 import { onInventoryUpdate } from "../../../utils/inventoryBus";
-import toast from "react-hot-toast"; // ✅ הוספה
-import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
+import toast from "react-hot-toast";
+import { getErrorText } from "../../../utils/toastText";
 
 import {
   Home,
@@ -68,12 +68,40 @@ export default function CategoriesPage() {
 
   const isAdmin = !!me?.is_admin;
 
-  // ✅ FILTERS (NEW)
+  // ✅ FILTERS
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [onlyInStock, setOnlyInStock] = useState(false);
-  const [badgeFilter, setBadgeFilter] = useState("ALL"); // ALL / POPULAR / BOX / ...
-  const [sortBy, setSortBy] = useState("NONE"); // NONE / PRICE_ASC / PRICE_DESC / NAME_ASC / NAME_DESC
+  const [badgeFilter, setBadgeFilter] = useState("ALL");
+  const [sortBy, setSortBy] = useState("NONE");
+
+  // ✅ NEW: search state (from URL)
+  const urlSearch = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("search") || "";
+  }, [location.search]);
+
+  const [search, setSearch] = useState(urlSearch);
+
+  useEffect(() => {
+    setSearch(urlSearch);
+  }, [urlSearch]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+
+    // אם ריק — נשארים בקטגוריות בלי חיפוש
+    if (!value.trim()) {
+      const next = new URLSearchParams(location.search);
+      next.delete("search");
+      navigate(`/categories?${next.toString()}`, { replace: true });
+      return;
+    }
+
+    // ✅ כמו שהיה ב-NAV: שולח לתוצאות ב-/products
+    navigate(`/products?search=${encodeURIComponent(value)}`, { replace: true });
+  };
 
   const PAGE_SIZE = 9;
   const [page, setPage] = useState(1);
@@ -126,22 +154,14 @@ export default function CategoriesPage() {
     return off;
   }, [me, loadAll]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const s = params.get("search");
-    if (s && s.trim()) {
-      navigate(`/products?search=${encodeURIComponent(s)}`, { replace: true });
-    }
-  }, [location.search, navigate]);
-
-  // ✅ category filter (existing)
+  // ✅ category filter
   const shownProducts = useMemo(() => {
     if (selected === "ALL") return products;
     const id = Number(selected);
     return (products || []).filter((p) => Number(p.category_id) === id);
   }, [products, selected]);
 
-  // ✅ collect badges for dropdown (NEW)
+  // ✅ collect badges
   const badgeOptions = useMemo(() => {
     const set = new Set();
     (products || []).forEach((p) => {
@@ -151,14 +171,13 @@ export default function CategoriesPage() {
     return ["ALL", ...Array.from(set)];
   }, [products]);
 
-  // ✅ apply filters + sort (NEW)
+  // ✅ apply filters + sort
   const filteredProducts = useMemo(() => {
     const min = minPrice === "" ? null : Number(minPrice);
     const max = maxPrice === "" ? null : Number(maxPrice);
 
     let list = Array.isArray(shownProducts) ? [...shownProducts] : [];
 
-    // price filter
     if (min !== null && Number.isFinite(min)) {
       list = list.filter((p) => Number(p.price ?? 0) >= min);
     }
@@ -166,32 +185,32 @@ export default function CategoriesPage() {
       list = list.filter((p) => Number(p.price ?? 0) <= max);
     }
 
-    // stock filter
     if (onlyInStock) {
       list = list.filter((p) => Number(p.quantity ?? 0) > 0);
     }
 
-    // badge filter
     if (badgeFilter !== "ALL") {
       const target = String(badgeFilter).toUpperCase();
       list = list.filter((p) => String(p.badge || "").toUpperCase() === target);
     }
 
-    // sorting
     if (sortBy === "PRICE_ASC") {
       list.sort((a, b) => Number(a.price ?? 0) - Number(b.price ?? 0));
     } else if (sortBy === "PRICE_DESC") {
       list.sort((a, b) => Number(b.price ?? 0) - Number(a.price ?? 0));
     } else if (sortBy === "NAME_ASC") {
-      list.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+      list.sort((a, b) =>
+        String(a.name || "").localeCompare(String(b.name || ""))
+      );
     } else if (sortBy === "NAME_DESC") {
-      list.sort((a, b) => String(b.name || "").localeCompare(String(a.name || "")));
+      list.sort((a, b) =>
+        String(b.name || "").localeCompare(String(a.name || ""))
+      );
     }
 
     return list;
   }, [shownProducts, minPrice, maxPrice, onlyInStock, badgeFilter, sortBy]);
 
-  // reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [selected, minPrice, maxPrice, onlyInStock, badgeFilter, sortBy]);
@@ -214,7 +233,6 @@ export default function CategoriesPage() {
   const createCategory = async () => {
     const name = newName.trim();
 
-    // ✅ ולידציה מינימלית
     if (!name) {
       toast.error("Please enter a category name.");
       return;
@@ -255,7 +273,9 @@ export default function CategoriesPage() {
 
       if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payloadWithCategory);
-        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        setProducts((prev) =>
+          prev.map((p) => (p.id === updated.id ? updated : p))
+        );
       } else {
         const created = await createProduct(payloadWithCategory);
         setProducts((prev) => [created, ...prev]);
@@ -322,8 +342,9 @@ export default function CategoriesPage() {
           })}
         </div>
 
-        {/* ✅ FILTER BAR (NEW) */}
+        {/* ✅ FILTER BAR + SEARCH (NEW) */}
         <div
+          className="cats-filterbar"
           style={{
             marginTop: 14,
             display: "flex",
@@ -332,8 +353,18 @@ export default function CategoriesPage() {
             alignItems: "center",
           }}
         >
+          {/* ✅ NEW: Search input (replaces navbar search) */}
           <input
-            className="nav__search"
+            className="page-search"
+            style={{ maxWidth: 240 }}
+            type="text"
+            placeholder="Search products..."
+            value={search}
+            onChange={handleSearchChange}
+          />
+
+          <input
+            className="page-search"
             style={{ maxWidth: 140 }}
             type="number"
             placeholder="Min ₪"
@@ -342,7 +373,7 @@ export default function CategoriesPage() {
           />
 
           <input
-            className="nav__search"
+            className="page-search"
             style={{ maxWidth: 140 }}
             type="number"
             placeholder="Max ₪"
@@ -351,7 +382,7 @@ export default function CategoriesPage() {
           />
 
           <select
-            className="nav__search"
+            className="page-search"
             style={{ maxWidth: 180 }}
             value={badgeFilter}
             onChange={(e) => setBadgeFilter(e.target.value)}
@@ -364,7 +395,7 @@ export default function CategoriesPage() {
           </select>
 
           <select
-            className="nav__search"
+            className="page-search"
             style={{ maxWidth: 200 }}
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -436,7 +467,9 @@ export default function CategoriesPage() {
                   key={p.id}
                   product={p}
                   isAdmin={isAdmin}
-                  onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
+                  onDeleted={(id) =>
+                    setProducts((prev) => prev.filter((x) => x.id !== id))
+                  }
                   onEdit={(data) => {
                     setEditInitial(data);
                     setModalOpen(true);
