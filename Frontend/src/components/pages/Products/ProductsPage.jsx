@@ -11,7 +11,6 @@ import {
 } from "../../../utils/productsApi";
 import "./products.css";
 import { onInventoryUpdate } from "../../../utils/inventoryBus";
-import { downloadProductsPdf } from "../../../utils/exportApi";
 import toast from "react-hot-toast";
 import { getErrorText } from "../../../utils/toastText";
 
