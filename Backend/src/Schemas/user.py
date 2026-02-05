@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, validator
+
+SPECIAL_CHARS = "!@#$%^&*()_+-=[]{};':\"\\|,.<>/?"
 
 class UserCreate(BaseModel):
     first_name: str
@@ -6,9 +8,24 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+    @validator("password")
+    def validate_password(cls, v: str):
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must include at least one capital letter")
+
+        if not any(c in SPECIAL_CHARS for c in v):
+            raise ValueError("Password must include at least one special character")
+
+        return v
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserResponse(BaseModel):
     id: int
@@ -16,6 +33,7 @@ class UserResponse(BaseModel):
     last_name: str
     email: EmailStr
     is_admin: bool
+
 
 class AuthResponse(BaseModel):
     access_token: str
