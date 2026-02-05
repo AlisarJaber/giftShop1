@@ -742,3 +742,54 @@ button{font-family:inherit}
   border-radius: 14px;
   border: 1px solid #eee;
 }
+
+/* =========================
+   MODAL FIX (APPEND ONLY)
+   ✅ Put this at the END of the file
+========================= */
+
+/* Backdrop stays the same, just add padding so modal never touches edges */
+.pg2-modalBackdrop{
+  padding:16px !important;
+}
+
+/* ✅ Make modal fit the screen and allow internal scrolling */
+.pg2-modalCard{
+  max-height: calc(100vh - 32px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* ✅ Scroll only the body */
+.pg2-modalBody{
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0; /* חשוב לגלילה בפלקס */
+}
+
+/* ✅ Keep actions always visible at bottom */
+.pg2-modalActions{
+  flex: 0 0 auto !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  background: #fff !important;
+  z-index: 2;
+}
+
+/* ✅ Optional: on small screens give a little more room */
+@media (max-width: 520px){
+  .pg2-modalCard{
+    width: min(520px, 96vw) !important;
+    border-radius: 14px !important;
+  }
+}
+
+/* ✅ Small improvement for file row (won't break anything) */
+.file-row{
+  flex-wrap: wrap;
+}
+.file-btn{
+  height: 42px;
+}

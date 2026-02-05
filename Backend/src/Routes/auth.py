@@ -19,7 +19,8 @@ def signup(payload: UserCreate, response: Response, session: Session = Depends(g
             last_name=payload.last_name,
             email=str(payload.email),
             password=payload.password,
-            is_admin=False
+            is_admin=False,
+            image_url=(payload.image_url.strip() if payload.image_url else None),  # ✅
         )
 
         token = create_access_token({"sub": str(user.id), "is_admin": user.is_admin})
@@ -32,6 +33,7 @@ def signup(payload: UserCreate, response: Response, session: Session = Depends(g
             secure=False,
             path="/",
         )
+
         return {
             "access_token": token,
             "token_type": "bearer",
@@ -40,13 +42,16 @@ def signup(payload: UserCreate, response: Response, session: Session = Depends(g
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "email": user.email,
-                "is_admin": user.is_admin
+                "is_admin": user.is_admin,
+                "image_url": user.image_url,  # ✅
             }
         }
+
     except ValueError as e:
         if str(e) == "EMAIL_ALREADY_EXISTS":
             raise HTTPException(status_code=400, detail="Email already exists")
         raise
+
 
 @router.post("/login", response_model=AuthResponse)
 def login(payload: UserLogin, response: Response, session: Session = Depends(get_session)):
@@ -65,7 +70,6 @@ def login(payload: UserLogin, response: Response, session: Session = Depends(get
         path="/",
     )
 
-
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -74,7 +78,8 @@ def login(payload: UserLogin, response: Response, session: Session = Depends(get
             "first_name": user.first_name,
             "last_name": user.last_name,
             "email": user.email,
-            "is_admin": user.is_admin
+            "is_admin": user.is_admin,
+            "image_url": user.image_url,  # ✅
         }
     }
 
@@ -86,12 +91,12 @@ def me(current_user=Depends(get_current_user)):
         "first_name": current_user.first_name,
         "last_name": current_user.last_name,
         "email": current_user.email,
-        "is_admin": current_user.is_admin
+        "is_admin": current_user.is_admin,
+        "image_url": current_user.image_url,  # ✅
     }
 
 
 @router.post("/logout")
 def logout(response: Response):
-    response.delete_cookie(key="access_token", path="/"
-)
+    response.delete_cookie(key="access_token", path="/")
     return {"ok": True}

@@ -185,3 +185,84 @@
   font-size: 12px;
   color: #888;
 }
+
+/* =========================
+   Profile image upload (Signup)
+   ========================= */
+.auth-fileHidden {
+  display: none;
+}
+
+.auth-fileRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.auth-fileBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.15s ease;
+  white-space: nowrap;
+}
+
+.auth-fileBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.auth-fileBtn.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.auth-fileName {
+  font-size: 13px;
+  color: #777;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-fileClear {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  background: #fff;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.auth-fileClear:hover {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.auth-fileError {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #b00020;
+}
+
+.auth-imagePreview {
+  margin-top: 10px;
+}
+
+.auth-imagePreview img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 999px;
+  border: 1px solid #eee;
+}

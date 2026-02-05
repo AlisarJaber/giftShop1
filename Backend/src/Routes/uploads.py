@@ -13,3 +13,4 @@ async def upload_image(image_file: UploadFile = File(...)):
         shutil.copyfileobj(image_file.file, buffer)
 
     return {"url": f"http://localhost:8000/static/images/{filename}"}
+# --
