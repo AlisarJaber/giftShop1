@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./adminCarts.css";
 import { onAdminEvent } from "../../../utils/adminBus"; 
+import BackButton from "../../ui/BackButton";
 
 const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
@@ -51,6 +52,7 @@ export default function AdminCartsPage() {
 
   return (
     <div className="admin-carts-wrap">
+        <BackButton />
       <h1 className="admin-carts-title">All Carts (Admin)</h1>
       <p className="admin-carts-sub">View all user carts and their items</p>
 

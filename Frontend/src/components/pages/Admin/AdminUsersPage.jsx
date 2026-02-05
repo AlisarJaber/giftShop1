@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./adminUsers.css";
 import { getAllUsers, blockUser, unblockUser } from "../../../utils/usersApi";
-
+import BackButton from "../../ui/BackButton";
 const DAYS_TO_MINUTES = 1440;
 
 export default function AdminUsersPage() {
@@ -85,6 +85,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="admin-users-wrap">
+      <BackButton />
       <h1 className="admin-users-title">All Users (Admin)</h1>
       <p className="admin-users-sub">View users and block/unblock access</p>
 
