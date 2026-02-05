@@ -14,7 +14,7 @@ from src.Models.cart import Cart
 from src.Models.sinCategory import SinCategory
 from src.Models.sinProduct import SinProduct
 from src.Models.favorite import Favorite
-
+from src.Models.audit_log import AuditLog
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)

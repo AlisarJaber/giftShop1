@@ -15,7 +15,7 @@ import AdminUsersPage from "./components/pages/Admin/AdminUsersPage";
 import FavoritesPage from "./components/pages/favorites/FavoritesPage";
 
 import SocketBridge from "./components/SocketBridge";
-
+import AdminAuditLogsPage from "./components/pages/Admin/AdminAuditLogsPage";
 import { Toaster } from "react-hot-toast";
 
 import "./assets/toast.css";
@@ -41,7 +41,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/products" replace />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-
+        <Route path="/admin/audit-logs" element={<AdminAuditLogsPage />} />
         <Route
           path="/products"
           element={

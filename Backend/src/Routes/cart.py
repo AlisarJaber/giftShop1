@@ -9,6 +9,8 @@ from src.Models.cart import Cart, CartProduct
 from src.Models.user import User
 from src.Models.product import Product
 from src.Models.sinProduct import SinProduct
+from src.Models.audit_log import AuditLog
+from src.socketio_server import emit_admins
 
 from src.Schemas.cart import AddToCartRequest
 from src.Schemas.custom_box import CustomBoxCreate
@@ -207,7 +209,7 @@ def delete_item_from_cart(
 
 
 @router.post("/checkout", status_code=status.HTTP_200_OK)
-def checkout_cart(
+async def checkout_cart(
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
@@ -220,10 +222,15 @@ def checkout_cart(
     if not items:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
+    logs_to_emit = [] 
+
     for it in items:
         product = session.get(Product, it.product_id)
         if not product or not product.is_active:
-            raise HTTPException(status_code=400, detail=f"Product {it.product_id} not found/active")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Product {it.product_id} not found/active"
+            )
 
         if bool(getattr(product, "is_custom_box", False)):
             continue
@@ -242,13 +249,29 @@ def checkout_cart(
 
         product.quantity = stock - need
         session.add(product)
+        log = AuditLog(
+            actor_user_id=user.id,
+            actor_name=f"{user.first_name} {user.last_name}".strip(),
+            actor_email=user.email,
+            action="purchase",
+            product_id=product.id,
+            product_name=product.name,
+            quantity_delta=-need,
+            cart_id=cart.id,
+            note="checkout",
+        )
+        session.add(log)
+
+        logs_to_emit.append({"product_id": product.id, "qty": need})
 
     cart.is_paid = True
     session.add(cart)
     session.commit()
 
-    return {"ok": True, "paid_cart_id": cart.id}
+    if logs_to_emit:
+        await emit_admins("audit_log_added", {"paid_cart_id": cart.id})
 
+    return {"ok": True, "paid_cart_id": cart.id}
 
 @router.get("/admin/all")
 def admin_all_carts(

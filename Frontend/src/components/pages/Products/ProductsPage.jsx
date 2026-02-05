@@ -126,9 +126,9 @@ export default function ProductsPage() {
       setModalOpen(false);
       setEditInitial(null);
     } catch (e) {
-      throw e; 
+      throw e;
     }
-  }
+  };
 
   useEffect(() => {
     const editId = location.state?.editProductId;
@@ -173,7 +173,15 @@ export default function ProductsPage() {
           </div>
 
           {isAdmin && (
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
+              }}
+            >
               <button className="admin-add" onClick={openAdd} type="button">
                 + Add product
               </button>
@@ -184,6 +192,14 @@ export default function ProductsPage() {
                 type="button"
               >
                 Export Products PDF
+              </button>
+
+              <button
+                className="admin-add"
+                onClick={() => navigate("/admin/audit-logs")}
+                type="button"
+              >
+                Audit Logs
               </button>
             </div>
           )}
