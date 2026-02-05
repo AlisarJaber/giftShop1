@@ -11,7 +11,6 @@ import {
 } from "../../../utils/productsApi";
 import "./products.css";
 import { onInventoryUpdate } from "../../../utils/inventoryBus";
-import { downloadProductsPdf } from "../../../utils/exportApi";
 import toast from "react-hot-toast";
 import { getErrorText } from "../../../utils/toastText";
 
@@ -184,22 +183,6 @@ export default function ProductsPage() {
             >
               <button className="admin-add" onClick={openAdd} type="button">
                 + Add product
-              </button>
-
-              <button
-                className="admin-add"
-                onClick={downloadProductsPdf}
-                type="button"
-              >
-                Export Products PDF
-              </button>
-
-              <button
-                className="admin-add"
-                onClick={() => navigate("/admin/audit-logs")}
-                type="button"
-              >
-                Audit Logs
               </button>
             </div>
           )}

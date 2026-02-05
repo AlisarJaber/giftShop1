@@ -49,6 +49,99 @@
   border-bottom-color: #c45a2a;
 }
 
+.nav__dropdown{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav__linkBtn{
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+
+  text-decoration: none;
+  color: #8c8c8c;
+  font-weight: 500;
+  padding: 6px 2px;
+  border-bottom: 2px solid transparent;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav__linkBtn:hover{
+  color: #222;
+}
+
+.nav__linkBtn:active{
+  color: #222;
+  border-bottom-color: transparent;
+}
+
+.nav__linkBtn:focus,
+.nav__linkBtn:focus-visible{
+  outline: none;
+  box-shadow: none;
+  color: #8c8c8c;
+  border-bottom-color: transparent;
+}
+
+.nav__linkBtn.active{
+  color: #8c8c8c !important;
+  border-bottom-color: transparent !important;
+}
+
+.nav__chev{
+  display: inline-block;
+  transition: transform .18s ease;
+  line-height: 1;
+}
+
+.nav__chev.open{
+  transform: rotate(180deg);
+}
+
+.nav__menu{
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.14);
+  padding: 8px;
+  z-index: 200;
+}
+
+.nav__menuItem{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #2b2623;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nav__menuItem:hover{
+  background: #f7f2eb;
+}
+
+.nav__menuBtn{
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 10px 10px;
+}
+
 .nav__left{
   display: flex;
   align-items: center;
@@ -82,9 +175,11 @@
   outline: none;
   min-width: 200px;
 }
+
 .nav__search:focus{
   border-color: #c22303;
 }
+
 .nav__hello {
   margin-right: 12px;
   font-weight: 600;
@@ -95,7 +190,6 @@
   gap: 6px;
 }
 
-/* ===== User avatar near hello ===== */
 .nav__user{
   display:flex;
   align-items:center;
