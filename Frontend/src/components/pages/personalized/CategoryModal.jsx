@@ -13,8 +13,11 @@ export default function CategoryModal({ modal, onClose, onSave, isAdmin = false 
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isActive, setIsActive] = useState(true);
+
+  // Upload UI states
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+  const [fileName, setFileName] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -25,22 +28,33 @@ export default function CategoryModal({ modal, onClose, onSave, isAdmin = false 
 
     setLoading(false);
     setErrMsg("");
+    setFileName("");
   }, [open, mode, dataId]);
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (!file.type?.startsWith("image/")) {
+      setErrMsg("Please upload an image file.");
+      event.target.value = "";
+      return;
+    }
+
     try {
       setErrMsg("");
       setLoading(true);
+      setFileName(file.name);
+
       const url = await uploadImage(file);
       setImageUrl(url);
     } catch (err) {
       console.error("Image upload failed", err);
       setErrMsg("Upload failed. Please try again.");
+      setFileName("");
     } finally {
       setLoading(false);
+      event.target.value = "";
     }
   };
 
@@ -84,41 +98,57 @@ export default function CategoryModal({ modal, onClose, onSave, isAdmin = false 
           />
 
           <label className="pg2-modalLabel">Category image</label>
-          <input
-            className="pg2-modalInput"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            disabled={loading}
-          />
 
-          {loading && (
-            <small style={{ color: "#7a7a7a", fontWeight: 700 }}>
-              Uploading image...
-            </small>
-          )}
-
-          {errMsg && (
-            <small style={{ color: "#c22303", fontWeight: 800 }}>
-              {errMsg}
-            </small>
-          )}
-
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              alt="preview"
-              style={{
-                width: "100%",
-                maxWidth: 260,
-                height: 160,
-                objectFit: "cover",
-                borderRadius: 12,
-                border: "1px solid #eee4dc",
-                marginTop: 8,
-              }}
+          {/* ✅ אותו UI כמו AdminProductModal */}
+          <div className="file-row">
+            <input
+              id="category-image-file"
+              className="file-input-hidden"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={loading}
             />
-          )}
+
+            <label
+              htmlFor="category-image-file"
+              className={`file-btn ${loading ? "is-disabled" : ""}`}
+            >
+              {loading ? "Uploading..." : "Upload image"}
+            </label>
+
+            <span className="file-name">
+              {fileName
+                ? fileName
+                : imageUrl
+                ? "Image selected"
+                : "No file selected"}
+            </span>
+
+            {imageUrl ? (
+              <button
+                type="button"
+                className="file-clear"
+                onClick={() => {
+                  setImageUrl("");
+                  setFileName("");
+                  setErrMsg("");
+                }}
+                disabled={loading}
+                title="Remove image"
+              >
+                ✕
+              </button>
+            ) : null}
+          </div>
+
+          {errMsg ? <div className="file-error">{errMsg}</div> : null}
+
+          {imageUrl ? (
+            <div className="image-preview">
+              <img src={imageUrl} alt="preview" />
+            </div>
+          ) : null}
 
           <label className="pg2-modalCheck">
             <input
@@ -134,6 +164,7 @@ export default function CategoryModal({ modal, onClose, onSave, isAdmin = false 
           <button className="pg2-modalBtn ghost" onClick={onClose} type="button">
             Cancel
           </button>
+
           <button
             className="pg2-modalBtn primary"
             onClick={submit}

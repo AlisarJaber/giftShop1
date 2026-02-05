@@ -27,6 +27,7 @@ export default function ProductModal({
   // ✅ upload state
   const [uploading, setUploading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+  const [fileName, setFileName] = useState("");
 
   // ✅ אתחול שדות רק כשפותחים מודאל / מחליפים mode / מחליפים מוצר לעריכה
   useEffect(() => {
@@ -34,6 +35,7 @@ export default function ProductModal({
 
     setErrMsg("");
     setUploading(false);
+    setFileName("");
 
     if (mode === "edit" && data) {
       setName(data?.name ?? "");
@@ -55,14 +57,23 @@ export default function ProductModal({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (!file.type?.startsWith("image/")) {
+      setErrMsg("Please upload an image file.");
+      event.target.value = "";
+      return;
+    }
+
     try {
       setErrMsg("");
       setUploading(true);
+      setFileName(file.name);
+
       const url = await uploadImage(file);
       setImageUrl(url);
     } catch (err) {
       console.error("Image upload failed", err);
       setErrMsg("Upload failed. Please try again.");
+      setFileName("");
     } finally {
       setUploading(false);
       // מאפשר לבחור שוב אותו קובץ אם רוצים
@@ -133,43 +144,58 @@ export default function ProductModal({
             placeholder="0"
           />
 
-          {/* ✅ במקום URL */}
+          {/* ✅ Upload UI (קליל, בלי Choose file) */}
           <label className="pg2-modalLabel">Product image</label>
-          <input
-            className="pg2-modalInput"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            disabled={uploading}
-          />
 
-          {uploading && (
-            <small style={{ color: "#7a7a7a", fontWeight: 700 }}>
-              Uploading image...
-            </small>
-          )}
-
-          {errMsg && (
-            <small style={{ color: "#c22303", fontWeight: 800 }}>
-              {errMsg}
-            </small>
-          )}
-
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              alt="preview"
-              style={{
-                width: "100%",
-                maxWidth: 260,
-                height: 160,
-                objectFit: "cover",
-                borderRadius: 12,
-                border: "1px solid #eee4dc",
-                marginTop: 8,
-              }}
+          <div className="file-row">
+            <input
+              id="product-modal-image-file"
+              className="file-input-hidden"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={uploading}
             />
-          )}
+
+            <label
+              htmlFor="product-modal-image-file"
+              className={`file-btn ${uploading ? "is-disabled" : ""}`}
+            >
+              {uploading ? "Uploading..." : "Upload image"}
+            </label>
+
+            <span className="file-name">
+              {fileName
+                ? fileName
+                : imageUrl
+                ? "Image selected"
+                : "No file selected"}
+            </span>
+
+            {imageUrl ? (
+              <button
+                type="button"
+                className="file-clear"
+                onClick={() => {
+                  setImageUrl("");
+                  setFileName("");
+                  setErrMsg("");
+                }}
+                disabled={uploading}
+                title="Remove image"
+              >
+                ✕
+              </button>
+            ) : null}
+          </div>
+
+          {errMsg ? <div className="file-error">{errMsg}</div> : null}
+
+          {imageUrl ? (
+            <div className="image-preview">
+              <img src={imageUrl} alt="preview" />
+            </div>
+          ) : null}
 
           <label className="pg2-modalLabel">Description (optional)</label>
           <textarea
