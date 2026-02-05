@@ -274,3 +274,5 @@ export default function AdminProductModal({ open, onClose, initial, onSubmit }) 
     </div>
   );
 }
+
+
