@@ -126,9 +126,9 @@ export default function ProductsPage() {
       setModalOpen(false);
       setEditInitial(null);
     } catch (e) {
-      alert(e?.response?.data?.detail || "Save failed");
+      throw e; 
     }
-  };
+  }
 
   useEffect(() => {
     const editId = location.state?.editProductId;

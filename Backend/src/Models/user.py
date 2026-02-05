@@ -15,8 +15,5 @@ class User(SQLModel, table=True):
 
     is_admin: bool = Field(default=False)
 
-    # ======================
-    # 🔒 Admin block support
-    # ======================
     is_blocked: bool = Field(default=False)
     blocked_until: Optional[datetime] = Field(default=None)

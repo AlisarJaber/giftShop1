@@ -259,6 +259,13 @@ def admin_all_carts(
 
     out = []
     for c in carts:
+        user = session.get(User, c.user_id)
+        user_name = None
+        user_email = None
+        if user:
+            user_name = f"{user.first_name} {user.last_name}".strip()
+            user_email = user.email
+
         items_rows = session.exec(
             select(CartProduct).where(CartProduct.cart_id == c.id)
         ).all()
@@ -276,6 +283,8 @@ def admin_all_carts(
         out.append({
             "id": c.id,
             "user_id": c.user_id,
+            "user_name": user_name,
+            "user_email": user_email,
             "is_paid": bool(c.is_paid),
             "items": items,
         })
