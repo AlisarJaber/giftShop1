@@ -46,17 +46,57 @@ export default function ProductCard({
     }
   };
 
-  const handleDelete = async (e) => {
+  // ✅ DELETE עם confirm מעוצב (בלי alert)
+  const handleDelete = (e) => {
     e.stopPropagation();
-    if (!confirm("Delete this product?")) return;
 
-    try {
-      await deleteProduct(id);
-      onDeleted?.(id);
-      toast.success("Product deleted successfully");
-    } catch (e2) {
-      toast.error(getErrorText(e2, "Delete failed"));
-    }
+    toast.custom((t) => (
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 14,
+          padding: 14,
+          boxShadow: "0 10px 30px rgba(0,0,0,.12)",
+          border: "1px solid rgba(0,0,0,.06)",
+          width: 320,
+        }}
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>
+          Delete product?
+        </div>
+        <div style={{ opacity: 0.75, fontSize: 14, marginBottom: 12 }}>
+          This action can’t be undone.
+        </div>
+
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            className="p-adminBtn"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="p-adminBtn danger"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteProduct(id);
+                onDeleted?.(id);
+                toast.success("Product deleted successfully");
+              } catch (e2) {
+                toast.error(getErrorText(e2, "Delete failed"));
+              }
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ));
   };
 
   const handleEdit = async (e) => {
@@ -97,7 +137,7 @@ export default function ProductCard({
           alt={name}
           loading="lazy"
           onError={(e) => {
-            e.currentTarget.onerror = null; // למנוע לופ
+            e.currentTarget.onerror = null;
             e.currentTarget.src = "https://placehold.co/800x600?text=Gift";
           }}
         />
