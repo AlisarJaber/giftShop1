@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import "../../../assets/auth.css";
 import "./nav.css";
+import { downloadProductsPdf } from "../../../utils/exportApi"; // ✅ PDF export
+// אם אצלך הנתיב שונה - תשני בהתאם
 
 const API = "http://localhost:8000";
 const APIKEY = "SEACRET1234567";
@@ -13,22 +15,26 @@ const Navigation = () => {
 
   const [me, setMe] = useState(null);
 
-  // dropdown
+  // profile dropdown
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  // ✅ admin dropdown
+  const [adminOpen, setAdminOpen] = useState(false);
+  const adminRef = useRef(null);
 
   // edit modal
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
-  // ✅ password gate modal
+  // password gate modal
   const [pwOpen, setPwOpen] = useState(false);
   const [pw, setPw] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
   const [pwErr, setPwErr] = useState("");
 
-  // edit form (בלי current_password פה יותר)
+  // edit form
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -91,10 +97,15 @@ const Navigation = () => {
     loadMe();
   }, [location.pathname]);
 
+  // close menus on outside click
   useEffect(() => {
     const onDown = (e) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+      if (adminRef.current && !adminRef.current.contains(e.target)) {
+        setAdminOpen(false);
+      }
     };
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
@@ -115,7 +126,7 @@ const Navigation = () => {
     navigate("/login", { replace: true });
   };
 
-  // ✅ במקום לפתוח ישר edit: פותחים password gate
+  // open password gate
   const openEdit = () => {
     if (!me) return;
     setMenuOpen(false);
@@ -125,7 +136,7 @@ const Navigation = () => {
     setPwOpen(true);
   };
 
-  // ✅ אימות סיסמה ע"י login (בלי בקאנד חדש)
+  // password confirmation using login
   const confirmPassword = async () => {
     if (pwLoading) return;
 
@@ -139,14 +150,12 @@ const Navigation = () => {
     setPwErr("");
 
     try {
-      // אם הסיסמה נכונה, הבאקנד יחזיר 200 + ירענן cookie
       await axios.post(
         `${API}/auth/login`,
         { email: me.email, password },
         { withCredentials: true, headers: { apiKey: APIKEY } }
       );
 
-      // עכשיו פותחים את מודאל העריכה
       setErrMsg("");
       setUploadErr("");
       setUploading(false);
@@ -220,10 +229,6 @@ const Navigation = () => {
     setErrMsg("");
 
     try {
-      // ✅ עדיין חייבים current_password בבאקנד => נשלח את אותה סיסמה שאושרה
-      // כאן אין לנו אותה כבר, לכן הפתרון הפשוט: נבקש שוב בתוך שמירה? לא.
-      // אז נשמור את הסיסמה שאושרה בסטייט זמני בזמן עריכה:
-      // ✅ נשתמש ב-pw שנשאר בסטייט (לא מוחקים אותו עד סגירת edit)
       const res = await axios.patch(
         `${API}/auth/me`,
         {
@@ -231,7 +236,7 @@ const Navigation = () => {
           last_name,
           email,
           image_url,
-          current_password: pw, // ✅ הסיסמה שהוקלדה לפני הכניסה
+          current_password: pw,
         },
         { withCredentials: true, headers: { apiKey: APIKEY } }
       );
@@ -241,7 +246,7 @@ const Navigation = () => {
       window.dispatchEvent(new Event("auth-change"));
 
       setEditOpen(false);
-      setPw(""); // ✅ מנקים אחרי הצלחה
+      setPw("");
     } catch (err) {
       console.error("Update failed", err);
       setErrMsg(err?.response?.data?.detail || "Update failed. Please try again.");
@@ -254,6 +259,20 @@ const Navigation = () => {
     location.pathname === "/login" || location.pathname === "/signup";
 
   if (!me || hideOnAuthPages) return null;
+
+  const onAdminNav = (to) => {
+    setAdminOpen(false);
+    navigate(to);
+  };
+
+  const onExportPdf = async () => {
+    setAdminOpen(false);
+    try {
+      await downloadProductsPdf();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <>
@@ -275,14 +294,51 @@ const Navigation = () => {
           </Link>
 
           {isAdmin ? (
-            <>
-              <Link to="/admin/carts" className="nav__link">
-                Admin Carts
-              </Link>
-              <Link to="/admin/users" className="nav__link">
-                Admin Users
-              </Link>
-            </>
+            <div className="nav__dropdown" ref={adminRef}>
+              <button
+                type="button"
+                className="nav__linkBtn"
+                onClick={() => setAdminOpen((x) => !x)}
+              >
+                Admin <span className={`nav__chev ${adminOpen ? "open" : ""}`}>▾</span>
+              </button>
+
+              {adminOpen && (
+                <div className="nav__menu">
+                  <button
+                    type="button"
+                    className="nav__menuItem nav__menuBtn"
+                    onClick={() => onAdminNav("/admin/carts")}
+                  >
+                    Admin Carts
+                  </button>
+
+                  <button
+                    type="button"
+                    className="nav__menuItem nav__menuBtn"
+                    onClick={() => onAdminNav("/admin/users")}
+                  >
+                    Admin Users
+                  </button>
+
+                  <button
+                    type="button"
+                    className="nav__menuItem nav__menuBtn"
+                    onClick={onExportPdf}
+                  >
+                    Export Products PDF
+                  </button>
+
+                  <button
+                    type="button"
+                    className="nav__menuItem nav__menuBtn"
+                    onClick={() => onAdminNav("/admin/audit-logs")}
+                  >
+                    Audit Logs
+                  </button>
+                </div>
+              )}
+            </div>
           ) : null}
         </div>
 
@@ -358,7 +414,6 @@ const Navigation = () => {
         </div>
       </nav>
 
-      {/* ✅ Password gate modal */}
       {pwOpen && (
         <div className="navEdit__backdrop" onClick={() => setPwOpen(false)}>
           <div
@@ -417,7 +472,6 @@ const Navigation = () => {
         </div>
       )}
 
-      {/* ✅ Edit modal */}
       {editOpen && (
         <div className="navEdit__backdrop" onClick={() => setEditOpen(false)}>
           <div
