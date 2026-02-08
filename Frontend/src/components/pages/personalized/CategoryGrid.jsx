@@ -1,3 +1,5 @@
+import toast from "react-hot-toast";
+
 const FALLBACK =
   "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&w=1200&q=60";
 
@@ -10,6 +12,50 @@ export default function CategoryGrid({
   onDelete,
   isAdmin = false,
 }) {
+  const confirmDelete = (catId) => {
+    toast.custom((t) => (
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 14,
+          padding: 14,
+          boxShadow: "0 10px 30px rgba(0,0,0,.12)",
+          border: "1px solid rgba(0,0,0,.06)",
+          width: 320,
+        }}
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>
+          Delete category?
+        </div>
+        <div style={{ opacity: 0.75, fontSize: 14, marginBottom: 12 }}>
+          This action can’t be undone.
+        </div>
+
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            className="p-adminBtn"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="p-adminBtn danger"
+            onClick={() => {
+              toast.dismiss(t.id);
+              onDelete?.(catId);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <div className="pg2-cats">
       {categories.map((c) => {
@@ -43,6 +89,7 @@ export default function CategoryGrid({
                     e.stopPropagation();
                     onEdit?.(c);
                   }}
+                  title="Edit"
                 >
                   ✏️
                 </button>
@@ -51,8 +98,9 @@ export default function CategoryGrid({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete?.(c.id);
+                    confirmDelete(c.id);
                   }}
+                  title="Delete"
                 >
                   🗑
                 </button>
@@ -64,4 +112,3 @@ export default function CategoryGrid({
     </div>
   );
 }
-// ________________
