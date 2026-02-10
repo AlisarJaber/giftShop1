@@ -2,7 +2,7 @@ import { useState } from "react";
 import "../../../assets/auth.css";
 import { Link, useNavigate } from "react-router-dom";
 import { http } from "../../../utils/http";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { getErrorText } from "../../../utils/toastText";
 
 // ✅ same upload util you already have
@@ -10,7 +10,7 @@ import { uploadImage } from "../../../utils/singleApi";
 
 /* =========================
    Password Validation
-   ========================= */
+========================= */
 const validatePassword = (password) => {
   if (password.length < 8) {
     return "Password must be at least 8 characters";
@@ -62,7 +62,6 @@ const Signup = () => {
       setSelectedFileName("");
     } finally {
       setUploading(false);
-      // מאפשר לבחור שוב אותו קובץ אם רוצים
       event.target.value = "";
     }
   };
@@ -95,13 +94,10 @@ const Signup = () => {
         last_name,
         email,
         password,
-        image_url: profileImageUrl || null, // ✅ send to backend
+        image_url: profileImageUrl || null,
       });
 
-      if (res?.data?.access_token) {
-        localStorage.setItem("token", res.data.access_token);
-      }
-
+      // Using cookie auth (access_token cookie), no need to store token in localStorage
       if (res?.data?.user) {
         localStorage.setItem("user", JSON.stringify(res.data.user));
       }
@@ -198,9 +194,7 @@ const Signup = () => {
             <label>Profile image (optional)</label>
 
             <div className="auth-fileRow">
-              <label
-                className={`auth-fileBtn ${uploading ? "is-disabled" : ""}`}
-              >
+              <label className={`auth-fileBtn ${uploading ? "is-disabled" : ""}`}>
                 {uploading ? "Uploading..." : "Choose file"}
                 <input
                   className="auth-fileHidden"

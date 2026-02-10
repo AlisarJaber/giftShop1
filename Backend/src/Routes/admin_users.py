@@ -7,8 +7,7 @@ from sqlmodel import Session, select
 
 from database import get_session
 from src.Models.user import User
-from src.Utils.deps import require_admin  # ✅ uses your existing require_admin
-
+from src.Utils.deps import require_admin
 
 router = APIRouter(prefix="/admin/users", tags=["Admin Users"])
 
@@ -65,6 +64,7 @@ def block_user(
         raise HTTPException(status_code=400, detail="Minutes must be > 0")
 
     # limit to 30 days (optional safety)
+    # you can increase this if you want longer blocks
     if body.minutes > 60 * 24 * 30:
         raise HTTPException(status_code=400, detail="Minutes too large")
 
@@ -77,7 +77,12 @@ def block_user(
     session.commit()
     session.refresh(user)
 
-    return {"ok": True, "user_id": user_id, "blocked_until": user.blocked_until}
+    return {
+        "ok": True,
+        "user_id": user_id,
+        "is_blocked": user.is_blocked,
+        "blocked_until": user.blocked_until,
+    }
 
 
 @router.post("/{user_id}/unblock")
@@ -97,4 +102,9 @@ def unblock_user(
     session.commit()
     session.refresh(user)
 
-    return {"ok": True, "user_id": user_id}
+    return {
+        "ok": True,
+        "user_id": user_id,
+        "is_blocked": user.is_blocked,
+        "blocked_until": user.blocked_until,
+    }

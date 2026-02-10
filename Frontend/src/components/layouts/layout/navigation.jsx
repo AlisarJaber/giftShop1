@@ -1,13 +1,11 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import axios from "axios";
 import "../../../assets/auth.css";
 import "./nav.css";
-import { downloadProductsPdf } from "../../../utils/exportApi"; // ✅ PDF export
-// אם אצלך הנתיב שונה - תשני בהתאם
 
-const API = "http://localhost:8000";
-const APIKEY = "SEACRET1234567";
+import { downloadProductsPdf } from "../../../utils/exportApi";
+import { http } from "../../../utils/http";
+import { logout as apiLogout, getMe as apiGetMe, login as apiLogin } from "../../../utils/usersApi";
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -19,7 +17,7 @@ const Navigation = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // ✅ admin dropdown
+  // admin dropdown
   const [adminOpen, setAdminOpen] = useState(false);
   const adminRef = useRef(null);
 
@@ -59,28 +57,16 @@ const Navigation = () => {
   }, [me]);
 
   const isAdmin = useMemo(() => {
-    try {
-      return !!JSON.parse(localStorage.getItem("user") || "null")?.is_admin;
-    } catch {
-      return false;
-    }
+    return !!me?.is_admin;
   }, [me]);
 
   const loadMe = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setMe(null);
-      return;
-    }
-
     try {
-      const res = await axios.get(`${API}/auth/me`, {
-        withCredentials: true,
-        headers: { apiKey: APIKEY },
-      });
-      setMe(res.data);
-      localStorage.setItem("user", JSON.stringify(res.data));
-    } catch {
+      const data = await apiGetMe(); // ✅ uses http (with interceptor)
+      setMe(data);
+      localStorage.setItem("user", JSON.stringify(data));
+    } catch (err) {
+      // 401 -> not logged in
       setMe(null);
       localStorage.removeItem("user");
     }
@@ -113,15 +99,14 @@ const Navigation = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(
-        `${API}/auth/logout`,
-        {},
-        { withCredentials: true, headers: { apiKey: APIKEY } }
-      );
+      await apiLogout(); // ✅ clears cookie via http
     } catch {}
 
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("is_admin");
+
+    setMe(null);
     window.dispatchEvent(new Event("auth-change"));
     navigate("/login", { replace: true });
   };
@@ -150,11 +135,8 @@ const Navigation = () => {
     setPwErr("");
 
     try {
-      await axios.post(
-        `${API}/auth/login`,
-        { email: me.email, password },
-        { withCredentials: true, headers: { apiKey: APIKEY } }
-      );
+      // ✅ use apiLogin (http) so blocked-user is handled globally
+      await apiLogin({ email: me.email, password });
 
       setErrMsg("");
       setUploadErr("");
@@ -182,9 +164,9 @@ const Navigation = () => {
     const fd = new FormData();
     fd.append("image_file", file);
 
-    const res = await axios.post(`${API}/api/uploads/image`, fd, {
-      withCredentials: true,
-      headers: { apiKey: APIKEY, "Content-Type": "multipart/form-data" },
+    // ✅ use http (apiKey + interceptor)
+    const res = await http.post("/api/uploads/image", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
     return res.data?.url || "";
@@ -229,17 +211,14 @@ const Navigation = () => {
     setErrMsg("");
 
     try {
-      const res = await axios.patch(
-        `${API}/auth/me`,
-        {
-          first_name,
-          last_name,
-          email,
-          image_url,
-          current_password: pw,
-        },
-        { withCredentials: true, headers: { apiKey: APIKEY } }
-      );
+      // ✅ use http so blocked-user handling is global
+      const res = await http.patch("/auth/me", {
+        first_name,
+        last_name,
+        email,
+        image_url,
+        current_password: pw,
+      });
 
       setMe(res.data);
       localStorage.setItem("user", JSON.stringify(res.data));
@@ -258,6 +237,7 @@ const Navigation = () => {
   const hideOnAuthPages =
     location.pathname === "/login" || location.pathname === "/signup";
 
+  // ✅ If not logged in, don't show nav
   if (!me || hideOnAuthPages) return null;
 
   const onAdminNav = (to) => {
@@ -390,11 +370,7 @@ const Navigation = () => {
                   Update details
                 </button>
 
-                <button
-                  type="button"
-                  className="navMenu__btn danger"
-                  onClick={handleLogout}
-                >
+                <button type="button" className="navMenu__btn danger" onClick={handleLogout}>
                   Logout
                 </button>
               </div>

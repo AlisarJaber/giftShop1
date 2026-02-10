@@ -20,9 +20,42 @@ import { Toaster } from "react-hot-toast";
 
 import "./assets/toast.css";
 
+function getLocalUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+}
+
 function RequireAuth({ children }) {
-  const token = localStorage.getItem("token");
-  if (!token) return <Navigate to="/login" replace />;
+  const user = getLocalUser();
+
+  // not logged in
+  if (!user) return <Navigate to="/login" replace />;
+
+  // blocked user -> kick out
+  if (user?.is_blocked === true) {
+    // clear local
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("is_admin");
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function RequireAdmin({ children }) {
+  const user = getLocalUser();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user?.is_blocked === true) {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("is_admin");
+    return <Navigate to="/login" replace />;
+  }
+  if (!user?.is_admin) return <Navigate to="/products" replace />;
   return children;
 }
 
@@ -30,18 +63,16 @@ export default function App() {
   return (
     <>
       <SocketBridge />
-
       <Navigation />
 
       <Routes>
-        <Route path="/admin/carts" element={<AdminCartsPage />} />
-        <Route path="/admin/users" element={<AdminUsersPage />} />
-
-        <Route path="/personal" element={<PersonalizedGifts />} />
         <Route path="/" element={<Navigate to="/products" replace />} />
+
+        {/* Public */}
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/admin/audit-logs" element={<AdminAuditLogsPage />} />
+
+        {/* Protected (any logged-in user) */}
         <Route
           path="/products"
           element={
@@ -70,6 +101,15 @@ export default function App() {
         />
 
         <Route
+          path="/personal"
+          element={
+            <RequireAuth>
+              <PersonalizedGifts />
+            </RequireAuth>
+          }
+        />
+
+        <Route
           path="/cart"
           element={
             <RequireAuth>
@@ -78,7 +118,42 @@ export default function App() {
           }
         />
 
-        <Route path="/favorites" element={<FavoritesPage />} />
+        <Route
+          path="/favorites"
+          element={
+            <RequireAuth>
+              <FavoritesPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Admin only */}
+        <Route
+          path="/admin/carts"
+          element={
+            <RequireAdmin>
+              <AdminCartsPage />
+            </RequireAdmin>
+          }
+        />
+
+        <Route
+          path="/admin/users"
+          element={
+            <RequireAdmin>
+              <AdminUsersPage />
+            </RequireAdmin>
+          }
+        />
+
+        <Route
+          path="/admin/audit-logs"
+          element={
+            <RequireAdmin>
+              <AdminAuditLogsPage />
+            </RequireAdmin>
+          }
+        />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
