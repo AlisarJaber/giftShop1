@@ -37,7 +37,6 @@ function minutesUntilEndOfDate(dateStr) {
 }
 
 function parseBlockedUntil(u) {
-  // Try common backend field names:
   const raw =
     u?.blocked_until ??
     u?.blocked_until_at ??
@@ -47,10 +46,8 @@ function parseBlockedUntil(u) {
 
   if (!raw) return null;
 
-  // If already Date-like:
   if (raw instanceof Date && !Number.isNaN(raw.getTime())) return raw;
 
-  // If ISO string or timestamp:
   const dt = new Date(raw);
   if (!Number.isNaN(dt.getTime())) return dt;
 
@@ -58,7 +55,6 @@ function parseBlockedUntil(u) {
 }
 
 function formatDate(dt) {
-  // English date formatting (e.g., Feb 10, 2026)
   return dt.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -69,8 +65,7 @@ function formatDate(dt) {
 function daysLeftFromNow(dt) {
   const now = new Date();
   const diffMs = dt.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-  return diffDays;
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 }
 
 export default function AdminUsersPage() {
@@ -79,8 +74,8 @@ export default function AdminUsersPage() {
   const [err, setErr] = useState("");
 
   // UI state per user
-  const [blockDays, setBlockDays] = useState({}); // { [id]: "3" }
-  const [blockUntil, setBlockUntil] = useState({}); // { [id]: "YYYY-MM-DD" }
+  const [blockDays, setBlockDays] = useState({});
+  const [blockUntil, setBlockUntil] = useState({});
   const [busyId, setBusyId] = useState(null);
 
   const load = async () => {
@@ -143,14 +138,22 @@ export default function AdminUsersPage() {
 
     try {
       setBusyId(userId);
-      await blockUser(userId, minutes);
 
-      if (untilRaw) toast.success(`User blocked until ${untilRaw}`);
-      else toast.success(`User blocked for ${daysRaw} day(s)`);
+      const res = await blockUser(userId, minutes);
 
-      // optional: clear inputs after success
+      // Clear inputs after success
       setBlockDays((prev) => ({ ...prev, [userId]: "" }));
       setBlockUntil((prev) => ({ ...prev, [userId]: "" }));
+
+      // Prefer showing the real date from backend if it exists
+      const backendUntil = res?.blocked_until ? new Date(res.blocked_until) : null;
+      if (backendUntil && !Number.isNaN(backendUntil.getTime())) {
+        toast.success(`User blocked until ${formatDate(backendUntil)}`);
+      } else if (untilRaw) {
+        toast.success(`User blocked until ${untilRaw}`);
+      } else {
+        toast.success(`User blocked for ${daysRaw} day(s)`);
+      }
 
       await load();
     } catch (e) {
@@ -197,17 +200,26 @@ export default function AdminUsersPage() {
           const daysVal = blockDays[id] ?? "";
           const untilVal = blockUntil[id] ?? "";
 
-          // blocked info (if backend provides a date)
           const blockedUntilDate = isBlocked ? parseBlockedUntil(u) : null;
           const daysLeft =
             blockedUntilDate ? daysLeftFromNow(blockedUntilDate) : null;
 
-          const blockedInfo =
-            blockedUntilDate && Number.isFinite(daysLeft)
-              ? `Blocked until ${formatDate(blockedUntilDate)}${
-                  daysLeft > 0 ? ` (${daysLeft} day${daysLeft === 1 ? "" : "s"} left)` : ""
-                }`
-              : null;
+          let blockedInfo = null;
+
+          if (isBlocked) {
+            if (blockedUntilDate && Number.isFinite(daysLeft)) {
+              // If already expired (can happen until backend auto-clears on next request)
+              if (daysLeft <= 0) {
+                blockedInfo = `Blocked until ${formatDate(blockedUntilDate)} (expired)`;
+              } else {
+                blockedInfo = `Blocked until ${formatDate(blockedUntilDate)} (${daysLeft} day${
+                  daysLeft === 1 ? "" : "s"
+                } left)`;
+              }
+            } else {
+              blockedInfo = "Blocked (manual unblock required)";
+            }
+          }
 
           return (
             <div key={id} className="user-row">
@@ -228,12 +240,7 @@ export default function AdminUsersPage() {
                     </span>
                   </div>
 
-                  {/* Show extra blocked details */}
-                  {isBlocked && (
-                    <div className="user-row-blockinfo">
-                      {blockedInfo ? blockedInfo : "Blocked (no end date provided by API)"}
-                    </div>
-                  )}
+                  {isBlocked && <div className="user-row-blockinfo">{blockedInfo}</div>}
                 </div>
 
                 <div className="user-actions">
@@ -248,8 +255,7 @@ export default function AdminUsersPage() {
                         onChange={(e) => {
                           const v = e.target.value;
                           setBlockDays((prev) => ({ ...prev, [id]: v }));
-                          if (v !== "")
-                            setBlockUntil((prev) => ({ ...prev, [id]: "" }));
+                          if (v !== "") setBlockUntil((prev) => ({ ...prev, [id]: "" }));
                         }}
                         disabled={busyId === id || isAdmin}
                         title={isAdmin ? "Cannot block admin" : "Block for N days"}
