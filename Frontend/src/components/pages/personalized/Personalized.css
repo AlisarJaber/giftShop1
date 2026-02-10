@@ -793,3 +793,49 @@ button{font-family:inherit}
 .file-btn{
   height: 42px;
 }
+/* =========================
+   FIX: stock line without breaking card styles
+   put at END of file
+========================= */
+
+/* name (first div inside clickarea after img) */
+.pg2-product-clickarea > div:nth-of-type(1){
+  font-weight:900;
+  margin:10px 12px 6px;
+  color:#2c2c2c;
+}
+
+/* stock badge (our new div with class pg2-stock) */
+.pg2-stock{
+  display:inline-block;
+  width: fit-content;
+  margin:0 12px 10px;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:800;
+  background:#dffbe9;
+  color:#1c7c4c;
+}
+
+/* optional: out of stock (if you show "Out of stock") */
+.pg2-stock.out{
+  background:#ffecec;
+  color:#c0392b;
+}
+
+/* price (third div inside clickarea after img: name, stock, price) */
+.pg2-product-clickarea > div:nth-of-type(3){
+  font-weight:900;
+  color:#000;
+  margin:0 12px 14px;
+}
+
+.pg2-product.is-out{
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+.pg2-product.is-out .pg2-product-clickarea{
+  cursor: not-allowed;
+}

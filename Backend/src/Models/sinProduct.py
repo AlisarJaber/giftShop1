@@ -17,8 +17,12 @@ class SinProduct(SQLModel, table=True):
         foreign_key="single_categories.id"
     )
 
+    quantity: int = Field(default=0, nullable=False)
+
     category: Optional["SinCategory"] = Relationship(back_populates="products")
 
     is_active: bool = True
+
+    
     
 from src.Models.sinCategory import SinCategory  # noqa

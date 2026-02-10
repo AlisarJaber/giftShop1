@@ -25,9 +25,7 @@ export default function ProductGrid({
         }}
         onClick={(ev) => ev.stopPropagation()}
       >
-        <div style={{ fontWeight: 800, marginBottom: 6 }}>
-          Delete product?
-        </div>
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>Delete product?</div>
         <div style={{ opacity: 0.75, fontSize: 14, marginBottom: 12 }}>
           This action can’t be undone.
         </div>
@@ -59,32 +57,49 @@ export default function ProductGrid({
   return (
     <div className="pg2-products">
       {products.map((p) => {
-        const picked = (selections[activeCat?.id] || []).some(
-          (x) => x.id === p.id
-        );
+        const qty = Number(p.quantity ?? 0);
+        const isOut = qty <= 0;
 
-        const handleToggle = () => onToggle?.(p);
+        // ✅ אם נגמר המלאי – שלא יישאר "נבחר"
+        const picked =
+          !isOut &&
+          (selections[activeCat?.id] || []).some((x) => x.id === p.id);
+
+        const handleToggle = () => {
+          if (isOut) return; // ✅ חסימה מלאה להוספה/בחירה
+          onToggle?.(p);
+        };
 
         return (
           <div
             key={p.id}
-            className={`pg2-product ${picked ? "is-picked" : ""}`}
+            className={`pg2-product ${picked ? "is-picked" : ""} ${
+              isOut ? "is-out" : ""
+            }`}
           >
             {/* אזור הקליק של הכרטיס בלבד (לא כולל כפתורי Admin) */}
             <div
               className="pg2-product-clickarea"
               role="button"
-              tabIndex={0}
+              tabIndex={isOut ? -1 : 0} // ✅ לא פוקוס אם אין מלאי
               onClick={handleToggle}
               onKeyDown={(e) => {
+                if (isOut) return; // ✅ גם מקלדת חסומה
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   handleToggle();
                 }
               }}
+              aria-disabled={isOut ? "true" : "false"}
             >
               <img src={p.image_url} alt={p.name} />
               <div>{p.name}</div>
+
+              {/* stock line (כמו שכבר הוספת) */}
+              <div className={`pg2-stock ${isOut ? "out" : ""}`}>
+                {isOut ? "Out of stock" : `In stock: ${qty}`}
+              </div>
+
               <div>₪{p.price}</div>
             </div>
 

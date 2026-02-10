@@ -7,9 +7,10 @@ class SinProductBase(BaseModel):
     price: int = 0
     image_url: Optional[str] = None
     category_id: Optional[int] = None
+    quantity: int = 0
 
-class SinProductCreate(SinProductBase):
-    pass
+# class SinProductCreate(SinProductBase):
+#     pass
 
 class SinProductOut(SinProductBase):
     id: int
@@ -23,3 +24,4 @@ class SinProductCreate(BaseModel):
     price: int
     image_url: Optional[str] = None
     category_id: Optional[int] = None
+    quantity: int
