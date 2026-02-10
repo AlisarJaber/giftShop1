@@ -6,6 +6,7 @@ export default function ProductGrid({
   activeCat,
   selections,
   onToggle,
+  onOpenDetails,
   onEdit,
   onDelete,
   isAdmin = false,
@@ -31,11 +32,7 @@ export default function ProductGrid({
         </div>
 
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button
-            type="button"
-            className="p-adminBtn"
-            onClick={() => toast.dismiss(t.id)}
-          >
+          <button type="button" className="p-adminBtn" onClick={() => toast.dismiss(t.id)}>
             Cancel
           </button>
 
@@ -60,31 +57,27 @@ export default function ProductGrid({
         const qty = Number(p.quantity ?? 0);
         const isOut = qty <= 0;
 
-        // ✅ אם נגמר המלאי – שלא יישאר "נבחר"
         const picked =
           !isOut &&
           (selections[activeCat?.id] || []).some((x) => x.id === p.id);
 
         const handleToggle = () => {
-          if (isOut) return; // ✅ חסימה מלאה להוספה/בחירה
+          if (isOut) return;
           onToggle?.(p);
         };
 
         return (
           <div
             key={p.id}
-            className={`pg2-product ${picked ? "is-picked" : ""} ${
-              isOut ? "is-out" : ""
-            }`}
+            className={`pg2-product ${picked ? "is-picked" : ""} ${isOut ? "is-out" : ""}`}
           >
-            {/* אזור הקליק של הכרטיס בלבד (לא כולל כפתורי Admin) */}
             <div
               className="pg2-product-clickarea"
               role="button"
-              tabIndex={isOut ? -1 : 0} // ✅ לא פוקוס אם אין מלאי
+              tabIndex={isOut ? -1 : 0}
               onClick={handleToggle}
               onKeyDown={(e) => {
-                if (isOut) return; // ✅ גם מקלדת חסומה
+                if (isOut) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   handleToggle();
@@ -93,14 +86,26 @@ export default function ProductGrid({
               aria-disabled={isOut ? "true" : "false"}
             >
               <img src={p.image_url} alt={p.name} />
-              <div>{p.name}</div>
 
-              {/* stock line (כמו שכבר הוספת) */}
+              <div className="pg2-pname">{p.name}</div>
+
               <div className={`pg2-stock ${isOut ? "out" : ""}`}>
                 {isOut ? "Out of stock" : `In stock: ${qty}`}
               </div>
 
-              <div>₪{p.price}</div>
+              <div className="pg2-price">₪{p.price}</div>
+
+              <button
+                type="button"
+                className="pg2-detailsBottomBtn"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation(); 
+                  onOpenDetails?.(p);
+                }}
+              >
+                Show details
+              </button>
             </div>
 
             {isAdmin && (
