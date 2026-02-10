@@ -37,7 +37,8 @@ def create_product(
         description=body.description,
         price=body.price,
         image_url=body.image_url,
-        category_id=body.category_id
+        category_id=body.category_id,
+        quantity=body.quantity
     )
     session.add(p)
     session.commit()
@@ -68,6 +69,7 @@ def update_product(
     p.price = body.price
     p.image_url = body.image_url
     p.category_id = body.category_id
+    p.quantity = body.quantity
 
     session.add(p)
     session.commit()
