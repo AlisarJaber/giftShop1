@@ -21,6 +21,7 @@ export default function ProductModal({
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [price, setPrice] = useState("");
+  const [quantity, setQuantity] = useState(""); // ✅ NEW
   const [imageUrl, setImageUrl] = useState("");
   const [desc, setDesc] = useState("");
 
@@ -41,6 +42,7 @@ export default function ProductModal({
       setName(data?.name ?? "");
       setCategoryId(String(data?.category_id ?? ""));
       setPrice(String(data?.price ?? ""));
+      setQuantity(String(data?.quantity ?? 0)); // ✅ NEW
       setImageUrl(data?.image_url ?? "");
       setDesc(data?.description ?? "");
     } else {
@@ -48,6 +50,7 @@ export default function ProductModal({
       setName("");
       setCategoryId("");
       setPrice("");
+      setQuantity("0"); // ✅ NEW
       setImageUrl("");
       setDesc("");
     }
@@ -84,10 +87,13 @@ export default function ProductModal({
   const submit = () => {
     if (uploading) return;
 
+    const q = Number(quantity);
+
     const p = {
       name: name.trim(),
       category_id: Number(categoryId),
       price: Number(price),
+      quantity: Number.isFinite(q) ? Math.max(0, Math.floor(q)) : 0, // ✅ NEW
       image_url: imageUrl?.trim() || null,
       description: desc.trim() || null,
     };
@@ -95,6 +101,7 @@ export default function ProductModal({
     if (!p.name) return;
     if (!p.category_id) return;
     if (!Number.isFinite(p.price) || p.price <= 0) return;
+    if (!Number.isFinite(p.quantity) || p.quantity < 0) return; // ✅ NEW
 
     onSave?.(p);
   };
@@ -141,6 +148,18 @@ export default function ProductModal({
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             type="number"
+            placeholder="0"
+          />
+
+          {/* ✅ NEW: Quantity */}
+          <label className="pg2-modalLabel">Quantity</label>
+          <input
+            className="pg2-modalInput"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            type="number"
+            min="0"
+            step="1"
             placeholder="0"
           />
 
