@@ -20,6 +20,7 @@ import ProductGrid from "./ProductGrid";
 import SelectionSummary from "./SelectionSummary";
 import CategoryModal from "./CategoryModal";
 import ProductModal from "./ProductModal";
+import ProductDetailsModal from "./ProductDetailsModal";
 
 export default function PersonalizedGifts() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -29,6 +30,8 @@ export default function PersonalizedGifts() {
   const [products, setProducts] = useState([]);
   const [selections, setSelections] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsProduct, setDetailsProduct] = useState(null);
 
   const [catModal, setCatModal] = useState({
     open: false,
@@ -65,24 +68,27 @@ export default function PersonalizedGifts() {
 
       setActiveCat((prev) => {
         if (prev?.id && active.some((c) => c.id === prev.id)) return prev;
-        return active.length ? active[0] : null;
+        return null;
       });
     } catch (e) {
       toast.error(getErrorText(e, "Failed to load categories"));
     }
   }, []);
 
-  const loadProducts = useCallback(async (catId) => {
-    try {
-      setLoadingProducts(true);
-      const rows = await getSingleProducts(catId);
-      setProducts(rows || []);
-    } catch (e) {
-      toast.error(getErrorText(e, "Failed to load products"));
-    } finally {
-      setLoadingProducts(false);
-    }
-  }, []);
+  const loadProducts = useCallback(
+    async (catId) => {
+      try {
+        setLoadingProducts(true);
+        const rows = await getSingleProducts(catId);
+        setProducts(rows || []);
+      } catch (e) {
+        toast.error(getErrorText(e, "Failed to load products"));
+      } finally {
+        setLoadingProducts(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     loadCategories();
@@ -92,6 +98,10 @@ export default function PersonalizedGifts() {
     if (activeCat?.id) loadProducts(activeCat.id);
   }, [activeCat?.id, loadProducts]);
 
+  useEffect(() => {
+    if (!activeCat?.id) setProducts([]);
+  }, [activeCat?.id]);
+
   const togglePick = (product) => {
     const catId = activeCat?.id;
     if (!catId) return;
@@ -99,11 +109,16 @@ export default function PersonalizedGifts() {
     setSelections((prev) => {
       const cur = prev[catId] || [];
       const exists = cur.some((p) => p.id === product.id);
-      if (exists) return { ...prev, [catId]: cur.filter((p) => p.id !== product.id) };
+
+      if (exists) {
+        return { ...prev, [catId]: cur.filter((p) => p.id !== product.id) };
+      }
+
       if (cur.length >= 2) {
         toast.error("You can select up to 2 items per category");
         return prev;
       }
+
       return { ...prev, [catId]: [...cur, product] };
     });
   };
@@ -114,6 +129,19 @@ export default function PersonalizedGifts() {
   );
 
   const pickedCount = activeCat?.id ? (selections[activeCat.id] || []).length : 0;
+
+  const openDetails = (p) => {
+    setDetailsProduct(p);
+    setDetailsOpen(true);
+  };
+  const closeDetails = () => {
+    setDetailsOpen(false);
+    setDetailsProduct(null);
+  };
+
+  const detailsPicked =
+    !!activeCat?.id &&
+    (selections[activeCat.id] || []).some((x) => x.id === detailsProduct?.id);
 
   const safeEditCategory = (c) => {
     if (!isAdmin) return;
@@ -176,7 +204,8 @@ export default function PersonalizedGifts() {
           <div className="pg2-intro">
             <h2 className="pg2-intro-title">Create your perfect gift 🎁</h2>
             <p className="pg2-intro-sub">
-              Choose categories, pick your favorite items, and we’ll bundle them into one beautiful gift box.
+              Choose categories, pick your favorite items, and we’ll bundle them into one beautiful
+              gift box.
             </p>
           </div>
 
@@ -224,6 +253,7 @@ export default function PersonalizedGifts() {
                 activeCat={activeCat}
                 selections={selections}
                 onToggle={togglePick}
+                onOpenDetails={openDetails}
                 isAdmin={isAdmin}
                 onEdit={safeEditProduct}
                 onDelete={safeDeleteProduct}
@@ -236,10 +266,20 @@ export default function PersonalizedGifts() {
           categories={categories}
           selections={selections}
           total={total}
-          // ✅ חשוב: כאן לא עושים POST, רק מנקים בחירה אחרי שהתווסף בהצלחה
           onAddToCart={() => setSelections({})}
         />
       </div>
+
+      <ProductDetailsModal
+        open={detailsOpen}
+        product={detailsProduct}
+        picked={detailsPicked}
+        onClose={closeDetails}
+        onTogglePick={() => {
+          if (!detailsProduct) return;
+          togglePick(detailsProduct);
+        }}
+      />
 
       {isAdmin && (
         <CategoryModal
@@ -290,16 +330,3 @@ export default function PersonalizedGifts() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
