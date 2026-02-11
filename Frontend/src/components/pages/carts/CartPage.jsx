@@ -9,9 +9,12 @@ import { getProductById } from "../../../utils/productsApi";
 import { useNavigate } from "react-router-dom";
 import "./cart.css";
 
-import toast from "react-hot-toast"; // ✅ הוספה
-import { getErrorText } from "../../../utils/toastText"; // ✅ הוספה
+import toast from "react-hot-toast";
+import { getErrorText } from "../../../utils/toastText";
 import BackButton from "../../ui/BackButton";
+
+const FALLBACK_BOX_IMAGE =
+  "http://localhost:8000/static/images/custom_gift_box.png";
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -21,17 +24,51 @@ const CartPage = () => {
   const [error, setError] = useState("");
   const [checkingOut, setCheckingOut] = useState(false);
 
+  // ✅ מחיר מארז – אם boxItems הם אובייקטים עם price
+  const getBoxFallbackPrice = (boxItems) => {
+    if (!Array.isArray(boxItems)) return 0;
+    // אם זה array של strings אין price -> מחיר 0 (נשתמש ב-boxPrice מהשרת)
+    return boxItems.reduce((sum, p) => sum + Number(p?.price ?? 0), 0);
+  };
+
+  const getUnitPrice = (it) => {
+    if (it?.isBox) {
+      const serverPrice = Number(it?.boxPrice ?? 0);
+      if (serverPrice > 0) return serverPrice;
+      return getBoxFallbackPrice(it?.boxItems);
+    }
+    return Number(it?.product?.price ?? 0);
+  };
+
   const total = useMemo(() => {
-    const t = items.reduce((sum, it) => {
-      const price = Number(it.product?.price ?? 0);
-      return sum + price * Number(it.quantity ?? 0);
+    return items.reduce((sum, it) => {
+      const unit = getUnitPrice(it);
+      const qty = Number(it.quantity ?? 0);
+      return sum + unit * qty;
     }, 0);
-    return t;
   }, [items]);
 
   const totalItems = useMemo(() => {
     return items.reduce((s, it) => s + Number(it.quantity ?? 0), 0);
   }, [items]);
+
+  // ✅ להפוך boxItems לכללי לתצוגה:
+  // אם זה strings -> מציג אותם
+  // אם זה objects -> מציג name
+  const getBoxNamesString = (boxItems) => {
+    if (!Array.isArray(boxItems) || boxItems.length === 0) return "";
+
+    // strings
+    if (typeof boxItems[0] === "string") {
+      return boxItems.filter(Boolean).join(", ");
+    }
+
+    // objects
+    return boxItems
+      .map((p) => p?.name)
+      .filter(Boolean)
+      .join(", ");
+  };
 
   const loadCart = async () => {
     const cartRows = await getCart();
@@ -44,7 +81,26 @@ const CartPage = () => {
     const merged = await Promise.all(
       cartRows.map(async (row) => {
         const product = await getProductById(row.product_id);
-        return { product, quantity: row.quantity };
+
+        const boxItems = row?.box_items ?? row?.boxItems ?? null;
+        const boxPrice = row?.box_price ?? row?.boxPrice ?? null;
+
+        // ✅ הכי בטוח: אם יש box_items/box_price - זה מארז
+        const isBox =
+          Boolean(row?.is_box) ||
+          Boolean(row?.isBox) ||
+          (Array.isArray(row?.box_items) && row.box_items.length > 0) ||
+          (Array.isArray(row?.boxItems) && row.boxItems.length > 0) ||
+          (row?.box_price != null && Number(row.box_price) > 0) ||
+          (row?.boxPrice != null && Number(row.boxPrice) > 0);
+
+        return {
+          product,
+          quantity: row.quantity,
+          isBox,
+          boxItems,
+          boxPrice,
+        };
       })
     );
 
@@ -56,13 +112,17 @@ const CartPage = () => {
       setError("");
 
       const item = items.find((x) => x.product?.id === productId);
-      const stock = Number(item?.product?.quantity ?? 0);
 
-      if (currentQty + 1 > stock) {
-        const msg = `Not enough stock. Only ${stock} left.`;
-        setError(msg);
-        toast.error(msg);
-        return;
+      // ✅ אם זה לא מארז – עושים בדיקת סטוק
+      if (!item?.isBox) {
+        const stock = Number(item?.product?.quantity ?? 0);
+
+        if (currentQty + 1 > stock) {
+          const msg = `Not enough stock. Only ${stock} left.`;
+          setError(msg);
+          toast.error(msg);
+          return;
+        }
       }
 
       await updateCartItemQuantity(productId, currentQty + 1);
@@ -144,12 +204,11 @@ const CartPage = () => {
     <div className="cart-page">
       <div className="cart-container">
         <BackButton />
+
         <div className="cart-header">
           <h2 className="cart-title">Your Shopping Cart</h2>
           <p className="cart-subtitle">Review your items before checkout</p>
         </div>
-        
-
 
         {error ? <div className="cart-error">{error}</div> : null}
 
@@ -204,19 +263,39 @@ const CartPage = () => {
 
             <section className="cart-items">
               <div className="cart-items-toprow">
-                <div className="cart-items-count">{items.length} items in cart</div>
+                <div className="cart-items-count">
+                  {items.length} items in cart
+                </div>
               </div>
 
               <div className="cart-list">
                 {items.map((it) => {
-                  const stock = Number(it.product?.quantity ?? 0);
-                  const atMax = Number(it.quantity) >= stock;
+                  const isBox = !!it.isBox;
+
+                  const stock = isBox ? null : Number(it.product?.quantity ?? 0);
+                  const atMax = isBox ? false : Number(it.quantity) >= stock;
+
+                  const unitPrice = getUnitPrice(it);
+                  const lineTotal = (
+                    unitPrice * Number(it.quantity ?? 0)
+                  ).toFixed(2);
+
+                  const boxNames = getBoxNamesString(it.boxItems);
+
+                  const displayName = isBox
+                    ? it.product?.name || "My Box"
+                    : it.product?.name || "";
+
+                  const imageSrc =
+                    it.product?.image_url ||
+                    it.product?.image ||
+                    (isBox ? FALLBACK_BOX_IMAGE : FALLBACK_BOX_IMAGE);
 
                   return (
                     <div key={it.product?.id} className="cart-item">
                       <div className="cart-item-main">
                         <div className="cart-item-line1">
-                          <div className="cart-item-name">{it.product?.name}</div>
+                          <div className="cart-item-name">{displayName}</div>
 
                           <button
                             className="cart-delete-icon"
@@ -228,24 +307,36 @@ const CartPage = () => {
                           </button>
                         </div>
 
+                        {isBox && boxNames ? (
+                          <div
+                            className="cart-box-includes"
+                            style={{ marginTop: 6, opacity: 0.9 }}
+                          >
+                            <b>Includes:</b> {boxNames}
+                          </div>
+                        ) : null}
+
                         <div className="cart-item-prices">
                           <span className="cart-item-unit">
-                            ₪{it.product?.price} per item
+                            ₪{unitPrice.toFixed(2)} per item
                           </span>
-                          <span className="cart-item-total">
-                            ₪
-                            {(
-                              Number(it.product?.price ?? 0) * Number(it.quantity)
-                            ).toFixed(2)}
-                          </span>
+                          <span className="cart-item-total">₪{lineTotal}</span>
                         </div>
 
-                        <div className="cart-stock-line">
-                          In stock: <b>{stock}</b>
-                          {stock === 0 ? (
-                            <span className="cart-out"> • Out of stock</span>
-                          ) : null}
-                        </div>
+                        {!isBox ? (
+                          <div className="cart-stock-line">
+                            In stock: <b>{stock}</b>
+                            {stock === 0 ? (
+                              <span className="cart-out"> • Out of stock</span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="cart-stock-line">
+                            <span style={{ opacity: 0.85 }}>
+                              Custom box item
+                            </span>
+                          </div>
+                        )}
 
                         <div className="cart-qty-pill" dir="ltr">
                           <button
@@ -261,30 +352,35 @@ const CartPage = () => {
                           <button
                             className="cart-qty-pill-btn"
                             onClick={() => handlePlus(it.product.id, it.quantity)}
-                            disabled={stock === 0 || atMax}
-                            title={atMax ? "Reached max stock" : "Increase"}
+                            disabled={!isBox && (stock === 0 || atMax)}
+                            title={!isBox && atMax ? "Reached max stock" : "Increase"}
                             type="button"
                             style={{
-                              opacity: stock === 0 || atMax ? 0.45 : 1,
+                              opacity: !isBox && (stock === 0 || atMax) ? 0.45 : 1,
                               cursor:
-                                stock === 0 || atMax ? "not-allowed" : "pointer",
+                                !isBox && (stock === 0 || atMax)
+                                  ? "not-allowed"
+                                  : "pointer",
                             }}
                           >
                             +
                           </button>
                         </div>
 
-                        {atMax && stock > 0 ? (
-                          <div className="cart-max-note">Max reached (stock: {stock})</div>
+                        {!isBox && atMax && stock > 0 ? (
+                          <div className="cart-max-note">
+                            Max reached (stock: {stock})
+                          </div>
                         ) : null}
                       </div>
+
                       <img
-                        src={it.product?.image_url || it.product?.image || "http://localhost:8000/static/images/custom_gift_box.png"}
-                        alt={it.product?.name || "product"}
+                        src={imageSrc}
+                        alt={displayName || "product"}
                         className="cart-item-image"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
-                          e.currentTarget.src = "http://localhost:8000/static/images/custom_gift_box.png";
+                          e.currentTarget.src = FALLBACK_BOX_IMAGE;
                         }}
                       />
                     </div>
