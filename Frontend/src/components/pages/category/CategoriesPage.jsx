@@ -75,7 +75,7 @@ export default function CategoriesPage() {
   const [badgeFilter, setBadgeFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("NONE");
 
-  // ✅ NEW: search state (from URL)
+  // ✅ Search from URL (once) + local typing state
   const urlSearch = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return params.get("search") || "";
@@ -87,21 +87,37 @@ export default function CategoriesPage() {
     setSearch(urlSearch);
   }, [urlSearch]);
 
+  // ✅ IMPORTANT: don't navigate on every keystroke
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearch(value);
-
-    // אם ריק — נשארים בקטגוריות בלי חיפוש
-    if (!value.trim()) {
-      const next = new URLSearchParams(location.search);
-      next.delete("search");
-      navigate(`/categories?${next.toString()}`, { replace: true });
-      return;
-    }
-
-    // ✅ כמו שהיה ב-NAV: שולח לתוצאות ב-/products
-    navigate(`/products?search=${encodeURIComponent(value)}`, { replace: true });
+    setSearch(e.target.value);
   };
+
+  // ✅ Debounced sync to URL (stays in /categories)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const next = new URLSearchParams(location.search);
+      const v = search.trim();
+
+      if (v) next.set("search", v);
+      else next.delete("search");
+
+      const nextQs = next.toString();
+      const curQs = location.search.startsWith("?")
+        ? location.search.slice(1)
+        : location.search;
+
+      // avoid needless replace loops
+      if (nextQs !== curQs) {
+        navigate(
+          { pathname: location.pathname, search: nextQs ? `?${nextQs}` : "" },
+          { replace: true }
+        );
+      }
+    }, 300);
+
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const PAGE_SIZE = 9;
   const [page, setPage] = useState(1);
@@ -171,12 +187,22 @@ export default function CategoriesPage() {
     return ["ALL", ...Array.from(set)];
   }, [products]);
 
-  // ✅ apply filters + sort
+  // ✅ apply filters + sort + SEARCH (inside categories page)
   const filteredProducts = useMemo(() => {
     const min = minPrice === "" ? null : Number(minPrice);
     const max = maxPrice === "" ? null : Number(maxPrice);
+    const q = search.trim().toLowerCase();
 
     let list = Array.isArray(shownProducts) ? [...shownProducts] : [];
+
+    // ✅ search by name / badge (same logic as ProductsPage)
+    if (q) {
+      list = list.filter((p) => {
+        const name = String(p.name || "").toLowerCase();
+        const badge = String(p.badge || "").toLowerCase();
+        return name.includes(q) || badge.includes(q);
+      });
+    }
 
     if (min !== null && Number.isFinite(min)) {
       list = list.filter((p) => Number(p.price ?? 0) >= min);
@@ -209,11 +235,19 @@ export default function CategoriesPage() {
     }
 
     return list;
-  }, [shownProducts, minPrice, maxPrice, onlyInStock, badgeFilter, sortBy]);
+  }, [
+    shownProducts,
+    minPrice,
+    maxPrice,
+    onlyInStock,
+    badgeFilter,
+    sortBy,
+    search,
+  ]);
 
   useEffect(() => {
     setPage(1);
-  }, [selected, minPrice, maxPrice, onlyInStock, badgeFilter, sortBy]);
+  }, [selected, minPrice, maxPrice, onlyInStock, badgeFilter, sortBy, search]);
 
   const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
 
@@ -342,7 +376,7 @@ export default function CategoriesPage() {
           })}
         </div>
 
-        {/* ✅ FILTER BAR + SEARCH (NEW) */}
+        {/* ✅ FILTER BAR + SEARCH */}
         <div
           className="cats-filterbar"
           style={{
@@ -353,7 +387,6 @@ export default function CategoriesPage() {
             alignItems: "center",
           }}
         >
-          {/* ✅ NEW: Search input (replaces navbar search) */}
           <input
             className="page-search"
             style={{ maxWidth: 240 }}
@@ -431,7 +464,9 @@ export default function CategoriesPage() {
         </div>
 
         {isAdmin && (
-          <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div
+            style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}
+          >
             <button
               className="admin-add"
               onClick={() => {

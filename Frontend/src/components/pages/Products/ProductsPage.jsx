@@ -29,25 +29,45 @@ export default function ProductsPage() {
   const [editInitial, setEditInitial] = useState(null);
   const [user, setUser] = useState(null);
 
-  const params = new URLSearchParams(location.search);
-  const urlSearch = params.get("search") || "";
+  // ✅ read from URL
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const urlSearch = (params.get("search") || "");
+
+  // ✅ input state
   const [searchInput, setSearchInput] = useState(urlSearch);
 
+  // ✅ keep input synced if URL changed from outside (back/forward, clicking links etc.)
   useEffect(() => {
     setSearchInput(urlSearch);
   }, [urlSearch]);
 
+  // ✅ onChange = only state (NO navigate here)
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchInput(value);
-
-    const next = new URLSearchParams(location.search);
-    if (value.trim()) next.set("search", value);
-    else next.delete("search");
-
-    const qs = next.toString();
-    navigate(qs ? `/products?${qs}` : "/products", { replace: true });
+    setSearchInput(e.target.value);
   };
+
+  // ✅ Debounced URL update + prevent scroll reset (fixes “one char” + jump)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const value = searchInput.trim();
+      const next = new URLSearchParams(location.search);
+
+      if (value) next.set("search", value);
+      else next.delete("search");
+
+      const qs = next.toString();
+      const nextUrl = qs ? `/products?${qs}` : "/products";
+
+      // avoid useless navigations
+      const currentUrl = location.pathname + location.search;
+      if (currentUrl !== nextUrl) {
+        navigate(nextUrl, { replace: true, preventScrollReset: true });
+      }
+    }, 250);
+
+    return () => clearTimeout(t);
+    // חשוב: location.search כדי לשמר פילטרים אחרים אם יש
+  }, [searchInput, navigate, location.pathname, location.search]);
 
   useEffect(() => {
     try {
@@ -91,9 +111,8 @@ export default function ProductsPage() {
   }, [user, load]);
 
   const search = useMemo(() => {
-    const p = new URLSearchParams(location.search);
-    return (p.get("search") || "").trim().toLowerCase();
-  }, [location.search]);
+    return (urlSearch || "").trim().toLowerCase();
+  }, [urlSearch]);
 
   const filteredProducts = useMemo(() => {
     if (!search) return products;
@@ -116,6 +135,8 @@ export default function ProductsPage() {
     return search ? filteredProducts : recommendedOnly;
   }, [search, filteredProducts, recommendedOnly]);
 
+  // ---- rest of your component stays the same ----
+
   const openAdd = () => {
     if (!isAdmin) return;
     setEditInitial(null);
@@ -134,9 +155,7 @@ export default function ProductsPage() {
     try {
       if (editInitial?.id) {
         const updated = await updateProduct(editInitial.id, payload);
-        setProducts((prev) =>
-          prev.map((p) => (p.id === updated.id ? updated : p))
-        );
+        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       } else {
         const created = await createProduct(payload);
         setProducts((prev) => [created, ...prev]);
@@ -161,11 +180,10 @@ export default function ProductsPage() {
       try {
         const data = await getProductById(editId);
         openEdit(data);
-
-        navigate("/products" + location.search, { replace: true, state: null });
+        navigate("/products" + location.search, { replace: true, state: null, preventScrollReset: true });
       } catch (e) {
         toast.error(getErrorText(e, "Failed to load product"));
-        navigate("/products" + location.search, { replace: true, state: null });
+        navigate("/products" + location.search, { replace: true, state: null, preventScrollReset: true });
       }
     })();
   }, [location.state, isAdmin, navigate, location.search]);
@@ -221,17 +239,13 @@ export default function ProductsPage() {
 
         <div className="products-grid">
           {loading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div className="p-skel" key={i} />
-              ))
+            ? Array.from({ length: 6 }).map((_, i) => <div className="p-skel" key={i} />)
             : shown.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
                   isAdmin={isAdmin}
-                  onDeleted={(id) =>
-                    setProducts((prev) => prev.filter((x) => x.id !== id))
-                  }
+                  onDeleted={(id) => setProducts((prev) => prev.filter((x) => x.id !== id))}
                   onEdit={openEdit}
                 />
               ))}
