@@ -40,5 +40,3 @@ export async function checkoutCart() {
   const res = await axios.post(`${API_URL}/checkout`, {}, cfg);
   return res.data;
 }
-
-

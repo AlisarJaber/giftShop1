@@ -36,13 +36,13 @@ export default function SelectionSummary({ categories, selections, total, onAddT
       });
 
       console.log("BOX ADDED:", res);
-      toast.success("המארז נוסף לעגלה!");
+      toast.success("added to cart!");
 
       // ✅ IMPORTANT: do NOT send another POST from parent
       if (onAddToCart) onAddToCart({ onlyUI: true });
     } catch (err) {
       console.error(err);
-      toast.error(getErrorText(err, "נכשל להוסיף מארז לעגלה"));
+      toast.error(getErrorText(err, "failed to add to cart"));
     }
   };
 

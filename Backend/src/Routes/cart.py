@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 import os
-from typing import List
+from typing import List, Optional
+
 from database import get_session
 from src.Utils.deps import get_current_user, require_admin
 
@@ -20,6 +21,9 @@ router = APIRouter(prefix="/carts", tags=["carts"])
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
 CUSTOM_BOX_IMAGE_URL = f"{PUBLIC_BASE_URL}/static/images/custom_gift_box.png"
 
+# ✅ כמות "וירטואלית" למארז כדי שלא יופיע Out of stock
+CUSTOM_BOX_STOCK = 999999
+
 
 def get_or_create_open_cart(session: Session, user_id: int) -> Cart:
     cart = session.exec(
@@ -36,16 +40,69 @@ def get_or_create_open_cart(session: Session, user_id: int) -> Cart:
     return cart
 
 
+def _parse_box_items_from_description(desc: Optional[str]) -> List[str]:
+    """
+    description שמור אצלך כ:
+    "Custom box includes: name x1, name x2"
+    נחזיר ["name x1", "name x2"] כדי שהפרונט יוכל להציג Includes.
+    """
+    if not desc:
+        return []
+
+    marker = "Custom box includes:"
+    if marker not in desc:
+        return []
+
+    tail = desc.split(marker, 1)[1].strip()
+    if not tail:
+        return []
+
+    parts = [p.strip() for p in tail.split(",") if p.strip()]
+    return parts
+
+
 @router.get("/")
 def get_my_cart(
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
+    """
+    ✅ מחזיר שורות עגלה עם שדות נוספים למארז:
+    - is_box
+    - box_price
+    - box_items
+    כדי שהפרונט יוכל להציג מחיר נכון ומה יש בפנים.
+    """
     cart = get_or_create_open_cart(session, user.id)
+
     cart_items = session.exec(
         select(CartProduct).where(CartProduct.cart_id == cart.id)
     ).all()
-    return cart_items
+
+    out = []
+    for row in cart_items:
+        p = session.get(Product, row.product_id)
+
+        is_box = bool(getattr(p, "is_custom_box", False)) if p else False
+        box_price = float(getattr(p, "price", 0) or 0) if is_box and p else None
+        box_items = (
+            _parse_box_items_from_description(getattr(p, "description", None))
+            if is_box and p
+            else []
+        )
+
+        out.append(
+            {
+                "product_id": row.product_id,
+                "quantity": int(row.quantity or 0),
+                # ✅ תוספות למארז
+                "is_box": is_box,
+                "box_price": box_price,
+                "box_items": box_items,
+            }
+        )
+
+    return out
 
 
 @router.post("/custom-box/add", status_code=status.HTTP_201_CREATED)
@@ -57,39 +114,41 @@ def create_custom_box_and_add_to_cart(
     if not body.items or len(body.items) == 0:
         raise HTTPException(status_code=400, detail="No items selected")
 
-    qty_by_id = {}
+    # ✅ אנחנו משתמשים רק בזהות המוצרים שנבחרו
+    # ולא בכמות שמגיעה מהפרונט (כי אצלך זה בטעות מלאי)
+    picked_ids: List[int] = []
     for it in body.items:
         pid = int(it.product_id)
-        qty = int(it.quantity or 1)
-
-        if pid <= 0 or qty <= 0:
-            raise HTTPException(status_code=400, detail="Invalid product_id/quantity")
-
-        qty_by_id[pid] = qty_by_id.get(pid, 0) + qty
-
-    sin_ids = list(qty_by_id.keys())
+        if pid <= 0:
+            raise HTTPException(status_code=400, detail="Invalid product_id")
+        if pid not in picked_ids:
+            picked_ids.append(pid)
 
     sin_products = session.exec(
         select(SinProduct).where(
-            SinProduct.id.in_(sin_ids),
+            SinProduct.id.in_(picked_ids),
             SinProduct.is_active == True,
         )
     ).all()
 
-    if len(sin_products) != len(sin_ids):
-        raise HTTPException(status_code=400, detail="one or more products not found/inactive")
+    if len(sin_products) != len(picked_ids):
+        raise HTTPException(
+            status_code=400, detail="one or more products not found/inactive"
+        )
 
-    total = 0
+    # ✅ תמיד x1 מכל מוצר במארז
+    total = 0.0
     parts = []
     for p in sin_products:
-        q = qty_by_id[p.id]
-        price = int(p.price or 0)
+        q = 1
+        price = float(p.price or 0)
         total += price * q
         parts.append(f"{p.name} x{q}")
 
     name = body.name or "My Box"
     names = ", ".join(parts)
 
+    # ✅ יוצרים מוצר מארז חדש
     custom_product = Product(
         name=name,
         description=f"Custom box includes: {names}",
@@ -97,7 +156,9 @@ def create_custom_box_and_add_to_cart(
         image_url=CUSTOM_BOX_IMAGE_URL,
         is_active=True,
         is_custom_box=True,
-        category_id=None
+        category_id=None,
+        # ✅ הכי חשוב: שלא יהיה Out of stock
+        quantity=CUSTOM_BOX_STOCK,
     )
     session.add(custom_product)
     session.commit()
@@ -108,7 +169,7 @@ def create_custom_box_and_add_to_cart(
     row = session.exec(
         select(CartProduct).where(
             CartProduct.cart_id == cart.id,
-            CartProduct.product_id == custom_product.id
+            CartProduct.product_id == custom_product.id,
         )
     ).first()
 
@@ -215,23 +276,21 @@ async def checkout_cart(
 ):
     cart = get_or_create_open_cart(session, user.id)
 
-    items = session.exec(
-        select(CartProduct).where(CartProduct.cart_id == cart.id)
-    ).all()
+    items = session.exec(select(CartProduct).where(CartProduct.cart_id == cart.id)).all()
 
     if not items:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
-    logs_to_emit = [] 
+    logs_to_emit = []
 
     for it in items:
         product = session.get(Product, it.product_id)
         if not product or not product.is_active:
             raise HTTPException(
-                status_code=400,
-                detail=f"Product {it.product_id} not found/active"
+                status_code=400, detail=f"Product {it.product_id} not found/active"
             )
 
+        # ✅ מארז לא מוריד סטוק
         if bool(getattr(product, "is_custom_box", False)):
             continue
 
@@ -244,11 +303,12 @@ async def checkout_cart(
         if stock < need:
             raise HTTPException(
                 status_code=400,
-                detail=f"Not enough stock for '{product.name}'. Need {need}, have {stock}"
+                detail=f"Not enough stock for '{product.name}'. Need {need}, have {stock}",
             )
 
         product.quantity = stock - need
         session.add(product)
+
         log = AuditLog(
             actor_user_id=user.id,
             actor_name=f"{user.first_name} {user.last_name}".strip(),
@@ -273,6 +333,7 @@ async def checkout_cart(
 
     return {"ok": True, "paid_cart_id": cart.id}
 
+
 @router.get("/admin/all")
 def admin_all_carts(
     session: Session = Depends(get_session),
@@ -289,27 +350,29 @@ def admin_all_carts(
             user_name = f"{user.first_name} {user.last_name}".strip()
             user_email = user.email
 
-        items_rows = session.exec(
-            select(CartProduct).where(CartProduct.cart_id == c.id)
-        ).all()
+        items_rows = session.exec(select(CartProduct).where(CartProduct.cart_id == c.id)).all()
 
         items = []
         for row in items_rows:
             p = session.get(Product, row.product_id)
-            items.append({
-                "product_id": row.product_id,
-                "quantity": int(row.quantity or 0),
-                "product_name": getattr(p, "name", None) if p else None,
-                "product_price": float(getattr(p, "price", 0) or 0) if p else 0,
-            })
+            items.append(
+                {
+                    "product_id": row.product_id,
+                    "quantity": int(row.quantity or 0),
+                    "product_name": getattr(p, "name", None) if p else None,
+                    "product_price": float(getattr(p, "price", 0) or 0) if p else 0,
+                }
+            )
 
-        out.append({
-            "id": c.id,
-            "user_id": c.user_id,
-            "user_name": user_name,
-            "user_email": user_email,
-            "is_paid": bool(c.is_paid),
-            "items": items,
-        })
+        out.append(
+            {
+                "id": c.id,
+                "user_id": c.user_id,
+                "user_name": user_name,
+                "user_email": user_email,
+                "is_paid": bool(c.is_paid),
+                "items": items,
+            }
+        )
 
     return out
