@@ -12,7 +12,6 @@ export const http = axios.create({
    Helpers
 ===================== */
 function clearClientAuth() {
-  // In case you store anything locally (safe even if you don't)
   try {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -21,9 +20,16 @@ function clearClientAuth() {
 }
 
 function redirectToLogin() {
-  // Avoid infinite redirects if already there
   if (window.location.pathname !== "/login") {
     window.location.href = "/login";
+  }
+}
+
+function hasLocalUser() {
+  try {
+    return !!JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return false;
   }
 }
 
@@ -48,7 +54,7 @@ http.interceptors.response.use(
     const status = error?.response?.status;
     const detail = error?.response?.data?.detail;
 
-    // Debug logs (keep)
+    // Debug logs
     if (error?.response) {
       console.error("API ERROR:", status, error.response.data);
     } else {
@@ -59,7 +65,7 @@ http.interceptors.response.use(
     if (status === 403 && detail === "USER_BLOCKED") {
       clearClientAuth();
 
-      // Try to clear the cookie session too (don't block redirect if fails)
+      // try to clear cookie too
       try {
         await axios.post(
           "http://localhost:8000/auth/logout",
@@ -70,15 +76,20 @@ http.interceptors.response.use(
 
       toast.error("Your account is blocked.");
       redirectToLogin();
-
       return Promise.reject(error);
     }
 
-    // Optional: if not logged in anymore -> redirect to login
+    /**
+     * ✅ IMPORTANT FIX:
+     * 401 is normal when you're not logged in (especially on /login or /signup).
+     * So we DO NOT redirect on every 401.
+     * We only redirect if there *was* a logged-in user locally.
+     */
     if (status === 401) {
-      // Don't spam toast here; user might just be unauthenticated
-      clearClientAuth();
-      redirectToLogin();
+      if (hasLocalUser()) {
+        clearClientAuth();
+        redirectToLogin();
+      }
       return Promise.reject(error);
     }
 
