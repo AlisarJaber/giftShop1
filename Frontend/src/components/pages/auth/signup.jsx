@@ -116,7 +116,7 @@ const Signup = () => {
       <div className="auth-card">
         <div className="brand">
           <h1>GiftShop</h1>
-          <span>🎁</span>
+          <span className="floating-icon">🎁</span>
         </div>
 
         <div className="welcome">Welcome</div>

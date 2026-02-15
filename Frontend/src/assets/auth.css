@@ -267,3 +267,14 @@
   border: 1px solid #eee;
 }
 /* ____ */
+
+@keyframes floatIcon {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+.floating-icon {
+  display: inline-block;
+  animation: floatIcon 3s ease-in-out infinite;
+}
