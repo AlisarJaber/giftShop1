@@ -1,8 +1,6 @@
 import socketio
 from src.Utils.jwt import decode_token
 
-API_KEY = "SEACRET1234567"
-
 sio = socketio.AsyncServer(
     async_mode="asgi",
     cors_allowed_origins=[
@@ -42,12 +40,15 @@ async def connect(sid, environ, auth):
 
     await sio.emit("connected", {"user_id": user_id, "is_admin": is_admin}, to=sid)
 
+
 @sio.event
 async def disconnect(sid):
     pass
 
+
 async def emit_inventory(event: str, payload: dict | None = None):
     await sio.emit(event, payload or {}, room="inventory")
+
 
 async def emit_admins(event: str, payload: dict | None = None):
     await sio.emit(event, payload or {}, room="admins")

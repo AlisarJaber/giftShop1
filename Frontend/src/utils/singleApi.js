@@ -1,13 +1,11 @@
 import axios from "axios";
 
 const API = "http://localhost:8000";
-const APIKEY = "SEACRET1234567";
 
 // יצירת instance קבוע
 const api = axios.create({
   baseURL: API,
-  withCredentials: true,
-  headers: { apiKey: APIKEY },
+  withCredentials: true
 });
 
 // לוג שגיאות כללי (עוזר בטירוף בדיבאג)
