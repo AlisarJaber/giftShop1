@@ -8,7 +8,6 @@ export function connectSocket(onEvent) {
   socket = io("http://localhost:8000", {
     withCredentials: true,          // שולח cookie access_token
     transports: ["websocket"],
-    query: { apiKey: "SEACRET1234567" }, // apiKey ב-query
   });
 
   socket.on("connect", () => {
