@@ -549,3 +549,42 @@
 @media (max-width: 600px) {
   .navEdit__card { max-height: 92vh; }
 }
+
+/* שלא ישבור שורה */
+.ui-fav-heart,
+.ui-cart-float {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ❤️ לב – פאמפ */
+.ui-fav-heart {
+  animation: heartPulse 1.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes heartPulse {
+  0%,100% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  60% { transform: scale(0.95); }
+}
+
+/* 🛒 עגלה – ציפה עדינה */
+.ui-cart-float {
+  animation: floatCart 2.5s ease-in-out infinite;
+}
+
+@keyframes floatCart {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.ui-gift-emoji {
+  animation: floatGift 2.2s ease-in-out infinite;
+}
+
+@keyframes floatGift {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(-4deg); }
+}
