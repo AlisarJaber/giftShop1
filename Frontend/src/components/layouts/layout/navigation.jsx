@@ -164,7 +164,6 @@ const Navigation = () => {
     const fd = new FormData();
     fd.append("image_file", file);
 
-    // ✅ use http (apiKey + interceptor)
     const res = await http.post("/api/uploads/image", fd, {
       headers: { "Content-Type": "multipart/form-data" },
     });

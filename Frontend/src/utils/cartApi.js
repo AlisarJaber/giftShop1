@@ -1,11 +1,9 @@
 import axios from "axios";
 
 const API_URL = "http://localhost:8000/carts";
-const APIKEY = "SEACRET1234567";
 
 const cfg = {
-  withCredentials: true,
-  headers: { apiKey: APIKEY },
+  withCredentials: true
 };
 
 export async function getCart() {

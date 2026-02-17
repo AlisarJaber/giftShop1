@@ -1,8 +1,6 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API_KEY = "SEACRET1234567";
-
 export const http = axios.create({
   baseURL: "http://localhost:8000",
   withCredentials: true,
@@ -38,8 +36,8 @@ function hasLocalUser() {
 ===================== */
 http.interceptors.request.use(
   (config) => {
+    // keep headers if exist, but don't inject secrets
     config.headers = config.headers || {};
-    config.headers["apiKey"] = API_KEY;
     return config;
   },
   (error) => Promise.reject(error)
@@ -70,7 +68,7 @@ http.interceptors.response.use(
         await axios.post(
           "http://localhost:8000/auth/logout",
           {},
-          { withCredentials: true, headers: { apiKey: API_KEY } }
+          { withCredentials: true }
         );
       } catch {}
 
@@ -96,3 +94,5 @@ http.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export default http;

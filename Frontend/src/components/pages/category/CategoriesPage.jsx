@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 
 const API = "http://localhost:8000";
-const APIKEY = "SEACRET1234567";
 
 const CATEGORY_ICONS = [
   { match: ["home", "house"], icon: Home },
@@ -125,8 +124,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     axios
       .get(`${API}/auth/me`, {
-        withCredentials: true,
-        headers: { apiKey: APIKEY },
+        withCredentials: true
       })
       .then((res) => setMe(res.data))
       .catch(() => setMe(null));
@@ -141,13 +139,10 @@ export default function CategoriesPage() {
     try {
       const [catRes, prodRes] = await Promise.all([
         axios.get(`${API}/categories`, {
-          withCredentials: true,
-          headers: { apiKey: APIKEY },
+          withCredentials: true
         }),
         axios.get(`${API}/products`, {
-          withCredentials: true,
-          headers: { apiKey: APIKEY },
-        }),
+          withCredentials: true        }),
       ]);
 
       setCategories(catRes.data || []);
@@ -281,7 +276,7 @@ export default function CategoriesPage() {
       const res = await axios.post(
         `${API}/categories`,
         { name },
-        { withCredentials: true, headers: { apiKey: APIKEY } }
+        { withCredentials: true}
       );
 
       setCategories((prev) => [res.data, ...prev]);

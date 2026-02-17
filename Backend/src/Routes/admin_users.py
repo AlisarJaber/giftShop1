@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -24,6 +24,17 @@ class UserOut(BaseModel):
 
 class BlockBody(BaseModel):
     minutes: int  # how many minutes to block
+
+
+# ✅ Reusable helper: bring user by id or 404 (no duplication)
+def get_user_or_404(session: Session, user_id: int) -> User:
+    user = session.exec(select(User).where(User.id == user_id)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return user
 
 
 @router.get("/", response_model=List[UserOut])
@@ -53,9 +64,7 @@ def block_user(
     session: Session = Depends(get_session),
     admin: User = Depends(require_admin),
 ):
-    user = session.exec(select(User).where(User.id == user_id)).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user = get_user_or_404(session, user_id)
 
     if user.is_admin:
         raise HTTPException(status_code=400, detail="Cannot block an admin user")
@@ -64,7 +73,6 @@ def block_user(
         raise HTTPException(status_code=400, detail="Minutes must be > 0")
 
     # limit to 30 days (optional safety)
-    # you can increase this if you want longer blocks
     if body.minutes > 60 * 24 * 30:
         raise HTTPException(status_code=400, detail="Minutes too large")
 
@@ -91,9 +99,7 @@ def unblock_user(
     session: Session = Depends(get_session),
     admin: User = Depends(require_admin),
 ):
-    user = session.exec(select(User).where(User.id == user_id)).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user = get_user_or_404(session, user_id)
 
     user.is_blocked = False
     user.blocked_until = None

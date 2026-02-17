@@ -5,7 +5,6 @@ import { onAdminEvent } from "../../../utils/adminBus";
 import BackButton from "../../ui/BackButton";
 
 const API = "http://localhost:8000";
-const APIKEY = "SEACRET1234567";
 
 export default function AdminCartsPage() {
   const [rows, setRows] = useState([]);
@@ -19,7 +18,6 @@ export default function AdminCartsPage() {
 
       const res = await axios.get(`${API}/carts/admin/all`, {
         withCredentials: true,
-        headers: { apiKey: APIKEY },
       });
 
       setRows(Array.isArray(res.data) ? res.data : []);
