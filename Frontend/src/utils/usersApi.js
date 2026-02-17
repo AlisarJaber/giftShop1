@@ -1,5 +1,20 @@
 import { http } from "./http";
 
+function saveAuth(data) {
+  const token = data?.access_token || null;
+  const user = data?.user || null;
+
+  if (token) localStorage.setItem("token", token);
+  else localStorage.removeItem("token");
+
+  if (user) localStorage.setItem("user", JSON.stringify(user));
+  else localStorage.removeItem("user");
+
+  localStorage.setItem("is_admin", String(!!user?.is_admin));
+
+  window.dispatchEvent(new Event("auth-change"));
+}
+
 /* =========================
    AUTH
 ========================= */
@@ -10,7 +25,12 @@ import { http } from "./http";
  */
 export async function getMe() {
   const res = await http.get("/auth/me");
-  return res.data;
+  const me = res.data;
+
+  localStorage.setItem("user", JSON.stringify(me));
+  localStorage.setItem("is_admin", String(!!me?.is_admin));
+
+  return me;
 }
 
 /**
@@ -18,8 +38,8 @@ export async function getMe() {
  * POST /auth/login
  */
 export async function login(payload) {
-  // payload: { email, password }
   const res = await http.post("/auth/login", payload);
+  saveAuth(res.data);
   return res.data;
 }
 
@@ -28,8 +48,8 @@ export async function login(payload) {
  * POST /auth/signup
  */
 export async function signup(payload) {
-  // payload: { first_name, last_name, email, password, image_url? }
   const res = await http.post("/auth/signup", payload);
+  saveAuth(res.data);
   return res.data;
 }
 
@@ -38,8 +58,15 @@ export async function signup(payload) {
  * POST /auth/logout
  */
 export async function logout() {
-  const res = await http.post("/auth/logout");
-  return res.data;
+  try {
+    const res = await http.post("/auth/logout");
+    return res.data;
+  } finally {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("is_admin");
+    window.dispatchEvent(new Event("auth-change"));
+  }
 }
 
 /* =========================
