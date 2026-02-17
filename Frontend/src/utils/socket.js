@@ -2,13 +2,25 @@ import { io } from "socket.io-client";
 
 let socket = null;
 
+function getToken() {
+  return (
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("token") ||
+    null
+  );
+}
+
 export function connectSocket(onEvent) {
   if (socket) return socket;
 
+  const token = getToken();
+
   socket = io("http://localhost:8000", {
-    withCredentials: true,          // שולח cookie access_token
     transports: ["websocket"],
-    query: { apiKey: "SEACRET1234567" }, // apiKey ב-query
+    auth: {
+      apiKey: "SEACRET1234567",
+      token,
+    },
   });
 
   socket.on("connect", () => {

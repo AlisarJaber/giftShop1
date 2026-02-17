@@ -16,8 +16,13 @@ const Login = () => {
     try {
       const res = await http.post("/auth/login", { email, password });
 
-      // Using cookie auth (access_token cookie), no need to store token in localStorage
       localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      const token = res.data.access_token || res.data.token;
+      if (token) {
+        localStorage.setItem("access_token", token);
+      }
+
       window.dispatchEvent(new Event("auth-change"));
 
       toast.success("Logged in successfully 👋");
@@ -28,7 +33,6 @@ const Login = () => {
 
       if (status === 403 && detail === "USER_BLOCKED") {
         toast.error("Your account is blocked.");
-        // stay on login
         return;
       }
 
@@ -45,7 +49,9 @@ const Login = () => {
         </div>
 
         <div className="welcome">welcome back</div>
-        <div className="subtitle">To enter the store you need to log in</div>
+        <div className="subtitle">
+          To enter the store you need to log in
+        </div>
 
         <div className="auth-tabs">
           <Link to="/signup" className="auth-tab">
