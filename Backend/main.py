@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -13,10 +13,8 @@ from src.Routes.sinCategory import router as single_category_router
 from src.Routes.sinProduct import router as single_product_router
 from src.Routes.uploads import router as uploads_router
 from src.Routes.export_pdf import router as export_router
-from src.Routes.admin_users import router as admin_users_router  
+from src.Routes.admin_users import router as admin_users_router
 from src.Routes.audit_logs import router as audit_logs_router
-
-from src.Utils.api_key import verify_api_key
 
 import os
 import socketio
@@ -39,25 +37,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
+
 
 @app.get("/")
 def root():
     return {"status": "ok"}
 
-app.include_router(auth_router, dependencies=[Depends(verify_api_key)])
-app.include_router(products_router, dependencies=[Depends(verify_api_key)])
-app.include_router(favorites_router, dependencies=[Depends(verify_api_key)])
-app.include_router(carts_router, dependencies=[Depends(verify_api_key)])
-app.include_router(categoryRouter, dependencies=[Depends(verify_api_key)])
-app.include_router(single_category_router, dependencies=[Depends(verify_api_key)])
-app.include_router(single_product_router, dependencies=[Depends(verify_api_key)])
-app.include_router(uploads_router, dependencies=[Depends(verify_api_key)])
-app.include_router(export_router, dependencies=[Depends(verify_api_key)]) 
-app.include_router(admin_users_router, dependencies=[Depends(verify_api_key)])
-app.include_router(audit_logs_router, dependencies=[Depends(verify_api_key)])
+
+app.include_router(auth_router)
+app.include_router(products_router)
+app.include_router(favorites_router)
+app.include_router(carts_router)
+app.include_router(categoryRouter)
+app.include_router(single_category_router)
+app.include_router(single_product_router)
+app.include_router(uploads_router)
+app.include_router(export_router)
+app.include_router(admin_users_router)
+app.include_router(audit_logs_router)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 asgi_app = socketio.ASGIApp(sio, app)
