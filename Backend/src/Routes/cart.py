@@ -21,7 +21,6 @@ router = APIRouter(prefix="/carts", tags=["carts"])
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
 CUSTOM_BOX_IMAGE_URL = f"{PUBLIC_BASE_URL}/static/images/custom_gift_box.png"
 
-# ✅ כמות "וירטואלית" למארז כדי שלא יופיע Out of stock
 CUSTOM_BOX_STOCK = 999999
 
 
@@ -41,11 +40,6 @@ def get_or_create_open_cart(session: Session, user_id: int) -> Cart:
 
 
 def _parse_box_items_from_description(desc: Optional[str]) -> List[str]:
-    """
-    description שמור אצלך כ:
-    "Custom box includes: name x1, name x2"
-    נחזיר ["name x1", "name x2"] כדי שהפרונט יוכל להציג Includes.
-    """
     if not desc:
         return []
 
@@ -71,307 +65,32 @@ def get_my_cart(
     - is_box
     - box_price
     - box_items
-    כדי שהפרונט יוכל להציג מחיר נכון ומה יש בפנים.
     """
     cart = get_or_create_open_cart(session, user.id)
 
-    cart_items = session.exec(
-        select(CartProduct).where(CartProduct.cart_id == cart.id)
+    rows = session.exec(
+        select(CartProduct, Product)
+        .join(Product, Product.id == CartProduct.product_id)
+        .where(CartProduct.cart_id == cart.id)
     ).all()
 
     out = []
-    for row in cart_items:
-        p = session.get(Product, row.product_id)
-
-        is_box = bool(getattr(p, "is_custom_box", False)) if p else False
-        box_price = float(getattr(p, "price", 0) or 0) if is_box and p else None
+    for cart_row, product in rows:
+        is_box = bool(getattr(product, "is_custom_box", False)) if product else False
+        box_price = float(getattr(product, "price", 0) or 0) if is_box and product else None
         box_items = (
-            _parse_box_items_from_description(getattr(p, "description", None))
-            if is_box and p
+            _parse_box_items_from_description(getattr(product, "description", None))
+            if is_box and product
             else []
         )
 
         out.append(
             {
-                "product_id": row.product_id,
-                "quantity": int(row.quantity or 0),
-                # ✅ תוספות למארז
+                "product_id": cart_row.product_id,
+                "quantity": int(cart_row.quantity or 0),
                 "is_box": is_box,
                 "box_price": box_price,
                 "box_items": box_items,
-            }
-        )
-
-    return out
-
-
-@router.post("/custom-box/add", status_code=status.HTTP_201_CREATED)
-def create_custom_box_and_add_to_cart(
-    body: CustomBoxCreate,
-    session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
-):
-    if not body.items or len(body.items) == 0:
-        raise HTTPException(status_code=400, detail="No items selected")
-
-    # ✅ אנחנו משתמשים רק בזהות המוצרים שנבחרו
-    # ולא בכמות שמגיעה מהפרונט (כי אצלך זה בטעות מלאי)
-    picked_ids: List[int] = []
-    for it in body.items:
-        pid = int(it.product_id)
-        if pid <= 0:
-            raise HTTPException(status_code=400, detail="Invalid product_id")
-        if pid not in picked_ids:
-            picked_ids.append(pid)
-
-    sin_products = session.exec(
-        select(SinProduct).where(
-            SinProduct.id.in_(picked_ids),
-            SinProduct.is_active == True,
-        )
-    ).all()
-
-    if len(sin_products) != len(picked_ids):
-        raise HTTPException(
-            status_code=400, detail="one or more products not found/inactive"
-        )
-
-    # ✅ תמיד x1 מכל מוצר במארז
-    total = 0.0
-    parts = []
-    for p in sin_products:
-        q = 1
-        price = float(p.price or 0)
-        total += price * q
-        parts.append(f"{p.name} x{q}")
-
-    name = body.name or "My Box"
-    names = ", ".join(parts)
-
-    # ✅ יוצרים מוצר מארז חדש
-    custom_product = Product(
-        name=name,
-        description=f"Custom box includes: {names}",
-        price=total,
-        image_url=CUSTOM_BOX_IMAGE_URL,
-        is_active=True,
-        is_custom_box=True,
-        category_id=None,
-        # ✅ הכי חשוב: שלא יהיה Out of stock
-        quantity=CUSTOM_BOX_STOCK,
-    )
-    session.add(custom_product)
-    session.commit()
-    session.refresh(custom_product)
-
-    cart = get_or_create_open_cart(session, user.id)
-
-    row = session.exec(
-        select(CartProduct).where(
-            CartProduct.cart_id == cart.id,
-            CartProduct.product_id == custom_product.id,
-        )
-    ).first()
-
-    if row:
-        row.quantity += 1
-    else:
-        row = CartProduct(cart_id=cart.id, product_id=custom_product.id, quantity=1)
-        session.add(row)
-
-    session.commit()
-    return {"added_product_id": custom_product.id, "total": total}
-
-
-@router.post("/add")
-def add_prod_to_cart(
-    cart_prod_request: AddToCartRequest,
-    session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
-):
-    cart = get_or_create_open_cart(session, user.id)
-
-    cart_item = session.exec(
-        select(CartProduct).where(
-            CartProduct.cart_id == cart.id,
-            CartProduct.product_id == cart_prod_request.product_id,
-        )
-    ).first()
-
-    if cart_item:
-        cart_item.quantity += cart_prod_request.quantity
-    else:
-        cart_item = CartProduct(
-            cart_id=cart.id,
-            product_id=cart_prod_request.product_id,
-            quantity=cart_prod_request.quantity,
-        )
-        session.add(cart_item)
-
-    session.commit()
-    return {"message": "Product added to cart"}
-
-
-@router.patch("/items/{product_id}")
-def update_item_quantity(
-    product_id: int,
-    quantity: int,
-    session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
-):
-    if quantity < 0:
-        raise HTTPException(status_code=400, detail="quantity must be >= 0")
-
-    cart = get_or_create_open_cart(session, user.id)
-
-    cart_item = session.exec(
-        select(CartProduct).where(
-            CartProduct.cart_id == cart.id,
-            CartProduct.product_id == product_id,
-        )
-    ).first()
-
-    if not cart_item:
-        raise HTTPException(status_code=404, detail="Item not found in cart")
-
-    if quantity == 0:
-        session.delete(cart_item)
-        session.commit()
-        return {"message": "Item removed"}
-
-    cart_item.quantity = quantity
-    session.add(cart_item)
-    session.commit()
-    session.refresh(cart_item)
-    return cart_item
-
-
-@router.delete("/items/{product_id}")
-def delete_item_from_cart(
-    product_id: int,
-    session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
-):
-    cart = get_or_create_open_cart(session, user.id)
-
-    cart_item = session.exec(
-        select(CartProduct).where(
-            CartProduct.cart_id == cart.id,
-            CartProduct.product_id == product_id,
-        )
-    ).first()
-
-    if not cart_item:
-        raise HTTPException(status_code=404, detail="Item not found in cart")
-
-    session.delete(cart_item)
-    session.commit()
-    return {"message": "Item deleted"}
-
-
-@router.post("/checkout", status_code=status.HTTP_200_OK)
-async def checkout_cart(
-    session: Session = Depends(get_session),
-    user: User = Depends(get_current_user),
-):
-    cart = get_or_create_open_cart(session, user.id)
-
-    items = session.exec(select(CartProduct).where(CartProduct.cart_id == cart.id)).all()
-
-    if not items:
-        raise HTTPException(status_code=400, detail="Cart is empty")
-
-    logs_to_emit = []
-
-    for it in items:
-        product = session.get(Product, it.product_id)
-        if not product or not product.is_active:
-            raise HTTPException(
-                status_code=400, detail=f"Product {it.product_id} not found/active"
-            )
-
-        # ✅ מארז לא מוריד סטוק
-        if bool(getattr(product, "is_custom_box", False)):
-            continue
-
-        stock = int(product.quantity or 0)
-        need = int(it.quantity or 0)
-
-        if need <= 0:
-            raise HTTPException(status_code=400, detail="Invalid cart quantity")
-
-        if stock < need:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Not enough stock for '{product.name}'. Need {need}, have {stock}",
-            )
-
-        product.quantity = stock - need
-        session.add(product)
-
-        log = AuditLog(
-            actor_user_id=user.id,
-            actor_name=f"{user.first_name} {user.last_name}".strip(),
-            actor_email=user.email,
-            action="purchase",
-            product_id=product.id,
-            product_name=product.name,
-            quantity_delta=-need,
-            cart_id=cart.id,
-            note="checkout",
-        )
-        session.add(log)
-
-        logs_to_emit.append({"product_id": product.id, "qty": need})
-
-    cart.is_paid = True
-    session.add(cart)
-    session.commit()
-
-    if logs_to_emit:
-        await emit_admins("audit_log_added", {"paid_cart_id": cart.id})
-
-    return {"ok": True, "paid_cart_id": cart.id}
-
-
-@router.get("/admin/all")
-def admin_all_carts(
-    session: Session = Depends(get_session),
-    admin: User = Depends(require_admin),
-):
-    carts = session.exec(select(Cart).order_by(Cart.id.desc())).all()
-
-    out = []
-    for c in carts:
-        user = session.get(User, c.user_id)
-        user_name = None
-        user_email = None
-        if user:
-            user_name = f"{user.first_name} {user.last_name}".strip()
-            user_email = user.email
-
-        items_rows = session.exec(select(CartProduct).where(CartProduct.cart_id == c.id)).all()
-
-        items = []
-        for row in items_rows:
-            p = session.get(Product, row.product_id)
-            items.append(
-                {
-                    "product_id": row.product_id,
-                    "quantity": int(row.quantity or 0),
-                    "product_name": getattr(p, "name", None) if p else None,
-                    "product_price": float(getattr(p, "price", 0) or 0) if p else 0,
-                }
-            )
-
-        out.append(
-            {
-                "id": c.id,
-                "user_id": c.user_id,
-                "user_name": user_name,
-                "user_email": user_email,
-                "is_paid": bool(c.is_paid),
-                "items": items,
             }
         )
 
