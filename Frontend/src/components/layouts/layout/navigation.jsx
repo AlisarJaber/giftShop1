@@ -79,10 +79,6 @@ const Navigation = () => {
     return () => window.removeEventListener("auth-change", onAuthChange);
   }, []);
 
-  useEffect(() => {
-    loadMe();
-  }, [location.pathname]);
-
   // close menus on outside click
   useEffect(() => {
     const onDown = (e) => {

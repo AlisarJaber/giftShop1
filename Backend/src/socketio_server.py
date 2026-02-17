@@ -11,22 +11,15 @@ sio = socketio.AsyncServer(
     engineio_logger=True,
 )
 
-
-def _get_cookie_value(cookie_header: str | None, key: str) -> str | None:
-    if not cookie_header:
-        return None
-    parts = [p.strip() for p in cookie_header.split(";")]
-    for p in parts:
-        if p.startswith(key + "="):
-            return p.split("=", 1)[1]
-    return None
-
-
 @sio.event
 async def connect(sid, environ, auth):
-    # ✅ Authenticate ONLY by access_token cookie (JWT)
-    cookie_header = environ.get("HTTP_COOKIE")
-    token = _get_cookie_value(cookie_header, "access_token")
+    auth = auth or {}
+
+    api_key = auth.get("apiKey")
+    if api_key != API_KEY:
+        return False
+
+    token = auth.get("token")
     if not token:
         return False
 
@@ -39,7 +32,7 @@ async def connect(sid, environ, auth):
 
     await sio.save_session(sid, {"user_id": user_id, "is_admin": is_admin})
 
-    # Rooms
+    # rooms
     await sio.enter_room(sid, "inventory")         # כולם
     await sio.enter_room(sid, f"user:{user_id}")   # אישי
     if is_admin:
