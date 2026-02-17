@@ -2,26 +2,17 @@ import { io } from "socket.io-client";
 
 let socket = null;
 
-function getToken() {
-  return (
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("token") ||
-    null
-  );
-}
-
 export function connectSocket(onEvent) {
   if (socket) return socket;
 
-  const token = getToken();
-
   socket = io("http://localhost:8000", {
     transports: ["websocket"],
+    withCredentials: true,
     auth: {
       apiKey: "SEACRET1234567",
-      token,
     },
   });
+
 
   socket.on("connect", () => {
     console.log("🔌 socket.io connected", socket.id);
@@ -29,6 +20,10 @@ export function connectSocket(onEvent) {
 
   socket.on("disconnect", () => {
     console.log("❌ socket.io disconnected");
+  });
+
+  socket.on("connect_error", (err) => {
+    console.log("❌ socket connect_error:", err?.message || err);
   });
 
   socket.on("connected", (data) =>
@@ -45,6 +40,18 @@ export function connectSocket(onEvent) {
 
   socket.on("inventory_update", (data) =>
     onEvent?.({ event: "inventory_update", ...data })
+  );
+
+  socket.on("audit_log_added", (data) =>
+    onEvent?.({ event: "audit_log_added", ...data })
+  );
+
+  socket.on("cart_paid", (data) =>
+    onEvent?.({ event: "cart_paid", ...data })
+  );
+
+  socket.on("cart_updated", (data) =>
+    onEvent?.({ event: "cart_updated", ...data })
   );
 
   return socket;

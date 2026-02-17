@@ -11,6 +11,14 @@ sio = socketio.AsyncServer(
     engineio_logger=True,
 )
 
+def _get_cookie(environ, name: str) -> str | None:
+    raw = environ.get("HTTP_COOKIE") or ""
+    parts = [p.strip() for p in raw.split(";") if p.strip()]
+    for p in parts:
+        if p.startswith(name + "="):
+            return p.split("=", 1)[1]
+    return None
+
 @sio.event
 async def connect(sid, environ, auth):
     auth = auth or {}
@@ -19,7 +27,7 @@ async def connect(sid, environ, auth):
     if api_key != API_KEY:
         return False
 
-    token = auth.get("token")
+    token = _get_cookie(environ, "access_token")
     if not token:
         return False
 
@@ -32,11 +40,10 @@ async def connect(sid, environ, auth):
 
     await sio.save_session(sid, {"user_id": user_id, "is_admin": is_admin})
 
-    # rooms
-    await sio.enter_room(sid, "inventory")         # כולם
-    await sio.enter_room(sid, f"user:{user_id}")   # אישי
+    await sio.enter_room(sid, "inventory")
+    await sio.enter_room(sid, f"user:{user_id}")
     if is_admin:
-        await sio.enter_room(sid, "admins")        # רק מנהלים
+        await sio.enter_room(sid, "admins")
 
     await sio.emit("connected", {"user_id": user_id, "is_admin": is_admin}, to=sid)
 
