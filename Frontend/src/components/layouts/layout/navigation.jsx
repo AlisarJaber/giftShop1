@@ -193,46 +193,57 @@ const Navigation = () => {
     }
   };
 
-  const submitEdit = async () => {
-    if (saving || uploading) return;
+  const buildPayload = (form, pw) => {
+  const first_name = form.first_name.trim();
+  const last_name  = form.last_name.trim();
+  const email      = form.email.trim();
+  const image_url  = (form.image_url || "").trim() || null;
 
-    const first_name = form.first_name.trim();
-    const last_name = form.last_name.trim();
-    const email = form.email.trim();
-    const image_url = (form.image_url || "").trim() || null;
+  return { first_name, last_name, email, image_url, current_password: pw };
+};
 
-    if (!first_name || !last_name || !email) {
-      setErrMsg("Please fill all fields.");
-      return;
-    }
+const validatePayload = (p) => {
+  if (!p.first_name || !p.last_name || !p.email) return "Please fill all fields.";
+  return null;
+};
 
-    setSaving(true);
-    setErrMsg("");
+const sendUpdate = (payload) => http.patch("/auth/me", payload);
 
-    try {
-      // ✅ use http so blocked-user handling is global
-      const res = await http.patch("/auth/me", {
-        first_name,
-        last_name,
-        email,
-        image_url,
-        current_password: pw,
-      });
+const applySuccess = (data) => {
+  setMe(data);
+  localStorage.setItem("user", JSON.stringify(data));
+  window.dispatchEvent(new Event("auth-change"));
+  setEditOpen(false);
+  setPw("");
+};
 
-      setMe(res.data);
-      localStorage.setItem("user", JSON.stringify(res.data));
-      window.dispatchEvent(new Event("auth-change"));
+const handleUpdateError = (err) => {
+  console.error("Update failed", err);
+  setErrMsg(err?.response?.data?.detail || "Update failed. Please try again.");
+};
 
-      setEditOpen(false);
-      setPw("");
-    } catch (err) {
-      console.error("Update failed", err);
-      setErrMsg(err?.response?.data?.detail || "Update failed. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
+const submitEdit = async () => {
+  if (saving || uploading) return;
 
+  const payload = buildPayload(form, pw);
+  const msg = validatePayload(payload);
+  if (msg) {
+    setErrMsg(msg);
+    return;
+  }
+
+  setSaving(true);
+  setErrMsg("");
+
+  try {
+    const res = await sendUpdate(payload);
+    applySuccess(res.data);
+  } catch (err) {
+    handleUpdateError(err);
+  } finally {
+    setSaving(false);
+  }
+};
   const hideOnAuthPages =
     location.pathname === "/login" || location.pathname === "/signup";
 
