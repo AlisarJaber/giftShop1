@@ -15,6 +15,7 @@
   background-position: center;
   transform: scale(1.03);
   filter: blur(2px) saturate(1.05);
+  z-index: 0; /* ✅ חיוני: לשמור שהתמונה תהיה מתחת */
 }
 
 .hero::after {
@@ -22,11 +23,21 @@
   position: absolute;
   inset: 0;
   background: rgba(250, 245, 240, 0.692);
+  z-index: 1; /* ✅ חיוני: שכבת הלבן מעל התמונה */
+}
+
+/* ✅ חיוני: שכבת "נופלים" מעל שכבת הלבן אבל מתחת לתוכן */
+.falling-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .hero-inner {
   position: relative;
-  z-index: 2;
+  z-index: 3; /* ✅ חיוני: התוכן מעל הכל */
   width: min(1100px, 92%);
   margin: 0 auto;
   padding: 64px 20px;
@@ -71,7 +82,7 @@
 
 .hero-title-accent {
   color: #c22303;
-  align-self: flex-start; 
+  align-self: flex-start;
   text-align: left;
 }
 
@@ -158,3 +169,109 @@
   }
 }
 
+.sparkle {
+  display: inline-block;
+  animation: sparkleGlow 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255, 200, 120, 0.4));
+}
+
+@keyframes sparkleGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* =========================
+   HERO falling background
+   ========================= */
+
+/* ✅ חיוני: לעדן כדי לא להעמיס על התמונה */
+.falling-item {
+  position: absolute;
+  top: -12%;
+  left: var(--x);
+  font-size: var(--size);
+  opacity: 0.08; /* 🔧 היה 0.14 */
+  filter: blur(0.3px); /* 🔧 היה 0.15px */
+  transform: translateY(0) rotate(var(--rot));
+  animation: fallY var(--dur) linear infinite;
+  will-change: transform;
+}
+
+/* ✨ נוצצים עוד יותר עדינים */
+.falling-item.is-sparkle {
+  opacity: 0.06; /* 🔧 היה 0.10 */
+  filter: drop-shadow(0 0 8px rgba(255, 210, 140, 0.22));
+  animation-name: fallY, twinkle;
+  animation-duration: var(--dur), 1.8s;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+@keyframes fallY {
+  to {
+    transform: translateY(120vh) rotate(calc(var(--rot) + 140deg));
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* פיזור אקראי “ידני” (18 מתנות) */
+.falling-layer .falling-item:nth-child(1)  { --x: 6%;  --dur: 13s; --size: 20px; --rot: -10deg; }
+.falling-layer .falling-item:nth-child(2)  { --x: 14%; --dur: 16s; --size: 18px; --rot: 8deg; }
+.falling-layer .falling-item:nth-child(3)  { --x: 22%; --dur: 12s; --size: 22px; --rot: -6deg; }
+.falling-layer .falling-item:nth-child(4)  { --x: 30%; --dur: 18s; --size: 17px; --rot: 12deg; }
+.falling-layer .falling-item:nth-child(5)  { --x: 38%; --dur: 14s; --size: 24px; --rot: -14deg; }
+.falling-layer .falling-item:nth-child(6)  { --x: 46%; --dur: 20s; --size: 19px; --rot: 10deg; }
+.falling-layer .falling-item:nth-child(7)  { --x: 54%; --dur: 15s; --size: 21px; --rot: -8deg; }
+.falling-layer .falling-item:nth-child(8)  { --x: 62%; --dur: 17s; --size: 18px; --rot: 14deg; }
+.falling-layer .falling-item:nth-child(9)  { --x: 70%; --dur: 13s; --size: 23px; --rot: -12deg; }
+.falling-layer .falling-item:nth-child(10) { --x: 78%; --dur: 19s; --size: 16px; --rot: 9deg; }
+.falling-layer .falling-item:nth-child(11) { --x: 86%; --dur: 14s; --size: 22px; --rot: -9deg; }
+.falling-layer .falling-item:nth-child(12) { --x: 92%; --dur: 21s; --size: 18px; --rot: 11deg; }
+.falling-layer .falling-item:nth-child(13) { --x: 10%; --dur: 22s; --size: 16px; --rot: -7deg; }
+.falling-layer .falling-item:nth-child(14) { --x: 26%; --dur: 24s; --size: 19px; --rot: 6deg; }
+.falling-layer .falling-item:nth-child(15) { --x: 44%; --dur: 23s; --size: 17px; --rot: -11deg; }
+.falling-layer .falling-item:nth-child(16) { --x: 58%; --dur: 25s; --size: 20px; --rot: 10deg; }
+.falling-layer .falling-item:nth-child(17) { --x: 74%; --dur: 26s; --size: 18px; --rot: -13deg; }
+.falling-layer .falling-item:nth-child(18) { --x: 88%; --dur: 27s; --size: 21px; --rot: 8deg; }
+
+/* הנוצצים (10) ממשיכים אחרי 18 */
+.falling-layer .falling-item:nth-child(19) { --x: 12%; --dur: 15s; --size: 16px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(20) { --x: 20%; --dur: 19s; --size: 14px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(21) { --x: 33%; --dur: 17s; --size: 15px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(22) { --x: 41%; --dur: 22s; --size: 13px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(23) { --x: 52%; --dur: 16s; --size: 15px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(24) { --x: 60%; --dur: 21s; --size: 14px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(25) { --x: 69%; --dur: 18s; --size: 13px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(26) { --x: 77%; --dur: 24s; --size: 15px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(27) { --x: 84%; --dur: 20s; --size: 14px; --rot: 0deg; }
+.falling-layer .falling-item:nth-child(28) { --x: 93%; --dur: 26s; --size: 13px; --rot: 0deg; }
+
+/* מובייל – להפחית עומס */
+@media (max-width: 720px) {
+  .falling-layer .falling-item:nth-child(n+16) {
+    display: none;
+  }
+}
+
+/* נגישות – להפחית תנועה */
+@media (prefers-reduced-motion: reduce) {
+  .falling-item {
+    animation: none !important;
+  }
+}
+
+/* Make falling gifts slightly more visible */
+.falling-item {
+  opacity: 0.35 !important;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15)) !important;
+}

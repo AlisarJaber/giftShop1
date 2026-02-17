@@ -100,7 +100,7 @@ const Navigation = () => {
   const handleLogout = async () => {
     try {
       await apiLogout(); // ✅ clears cookie via http
-    } catch {}
+    } catch { }
 
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -258,7 +258,7 @@ const Navigation = () => {
     <>
       <nav className="nav">
         <div className="nav__right">
-          <span className="nav__logo">🎁</span>
+          <span className="ui-gift-emoji">🎁</span>
           <span className="nav__title">Gift Shop</span>
         </div>
 
@@ -382,8 +382,8 @@ const Navigation = () => {
               <Link className="nav__icon" to="/cart" title="Cart">
                 🛒
               </Link>
-              <Link to="/favorites" className="nav__iconLink" title="Favorites">
-                ❤️
+              <Link to="/favorites" className="nav__iconlink" title="Favorites">
+                <span className="ui-fav-heart">💗</span>
               </Link>
             </>
           )}
@@ -513,8 +513,8 @@ const Navigation = () => {
                   {fileName
                     ? fileName
                     : form.image_url
-                    ? "Image selected"
-                    : "No file selected"}
+                      ? "Image selected"
+                      : "No file selected"}
                 </div>
 
                 {form.image_url ? (
