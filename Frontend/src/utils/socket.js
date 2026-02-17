@@ -5,54 +5,40 @@ let socket = null;
 export function connectSocket(onEvent) {
   if (socket) return socket;
 
+  const token = localStorage.getItem("token");
+  const auth = token ? { token: `Bearer ${token}` } : {};
+
+  if (!token) {
+    console.warn("socket: no local token, trying cookie auth fallback");
+  }
+
   socket = io("http://localhost:8000", {
     transports: ["websocket"],
     withCredentials: true,
-    auth: {
-      apiKey: "SEACRET1234567",
-    },
+    auth,
+    reconnection: true,
+    reconnectionAttempts: 5,
   });
-
 
   socket.on("connect", () => {
-    console.log("🔌 socket.io connected", socket.id);
+    console.log("socket.io connected", socket.id);
   });
 
-  socket.on("disconnect", () => {
-    console.log("❌ socket.io disconnected");
+  socket.on("disconnect", (reason) => {
+    console.log("socket.io disconnected:", reason);
   });
 
   socket.on("connect_error", (err) => {
-    console.log("❌ socket connect_error:", err?.message || err);
+    console.log("socket connect_error:", err?.message || err);
   });
 
-  socket.on("connected", (data) =>
-    onEvent?.({ event: "connected", ...data })
-  );
-
-  socket.on("item_added", (data) =>
-    onEvent?.({ event: "item_added", ...data })
-  );
-
-  socket.on("item_removed", (data) =>
-    onEvent?.({ event: "item_removed", ...data })
-  );
-
-  socket.on("inventory_update", (data) =>
-    onEvent?.({ event: "inventory_update", ...data })
-  );
-
-  socket.on("audit_log_added", (data) =>
-    onEvent?.({ event: "audit_log_added", ...data })
-  );
-
-  socket.on("cart_paid", (data) =>
-    onEvent?.({ event: "cart_paid", ...data })
-  );
-
-  socket.on("cart_updated", (data) =>
-    onEvent?.({ event: "cart_updated", ...data })
-  );
+  socket.on("connected", (data) => onEvent?.({ event: "connected", ...data }));
+  socket.on("item_added", (data) => onEvent?.({ event: "item_added", ...data }));
+  socket.on("item_removed", (data) => onEvent?.({ event: "item_removed", ...data }));
+  socket.on("inventory_update", (data) => onEvent?.({ event: "inventory_update", ...data }));
+  socket.on("audit_log_added", (data) => onEvent?.({ event: "audit_log_added", ...data }));
+  socket.on("cart_paid", (data) => onEvent?.({ event: "cart_paid", ...data }));
+  socket.on("cart_updated", (data) => onEvent?.({ event: "cart_updated", ...data }));
 
   return socket;
 }

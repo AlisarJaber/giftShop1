@@ -11,6 +11,7 @@ sio = socketio.AsyncServer(
     engineio_logger=True,
 )
 
+
 def _get_cookie(environ, name: str) -> str | None:
     raw = environ.get("HTTP_COOKIE") or ""
     parts = [p.strip() for p in raw.split(";") if p.strip()]
@@ -19,15 +20,19 @@ def _get_cookie(environ, name: str) -> str | None:
             return p.split("=", 1)[1]
     return None
 
+
 @sio.event
 async def connect(sid, environ, auth):
     auth = auth or {}
 
-    api_key = auth.get("apiKey")
-    if api_key != API_KEY:
-        return False
+    token = auth.get("token") if isinstance(auth, dict) else None
 
-    token = _get_cookie(environ, "access_token")
+    if token and token.startswith("Bearer "):
+        token = token.split(" ", 1)[1]
+
+    if not token:
+        token = _get_cookie(environ, "access_token")
+
     if not token:
         return False
 
